@@ -72,6 +72,15 @@ void Mesh::loadPmd(const std::string& fn)
 	// FIXME: load skeleton and blend weights from PMD file,
 	//        initialize std::vectors for the vertex attributes,
 	//        also initialize the skeleton as needed
+	int id = 0;
+	glm::vec3 wcoord;
+	int pid = -1;
+	while(mr.getJoint(id, wcoord, pid)){
+		Joint j(id, wcoord, pid);
+		skeleton.add_joint(j);
+		++id;
+	}
+
 }
 
 int Mesh::getNumberOfBones() const
@@ -100,4 +109,3 @@ Mesh::getCurrentQ() const
 {
 	return &currentQ_;
 }
-

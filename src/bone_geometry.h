@@ -79,6 +79,16 @@ struct Skeleton {
 	const glm::fquat* collectJointRot() const;
 
 	// FIXME: create skeleton and bone data structures
+
+	void add_joint(Joint& j){
+			joints.push_back(j);
+			// add current joint to parent's child list
+			joints[j.parent_index].children.push_back(j.joint_index);
+	}
+
+	void calculate_orientations(Joint root, glm::fquat orientation) {
+		
+	}
 };
 
 struct Mesh {
