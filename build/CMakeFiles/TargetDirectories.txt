@@ -1,0 +1,7 @@
+/u/hwett/Desktop/graphics/catwalk/build/CMakeFiles/rebuild_cache.dir
+/u/hwett/Desktop/graphics/catwalk/build/CMakeFiles/edit_cache.dir
+/u/hwett/Desktop/graphics/catwalk/build/CMakeFiles/utgraphicsutil.dir
+/u/hwett/Desktop/graphics/catwalk/build/CMakeFiles/pmdreader.dir
+/u/hwett/Desktop/graphics/catwalk/build/src/CMakeFiles/rebuild_cache.dir
+/u/hwett/Desktop/graphics/catwalk/build/src/CMakeFiles/skinning.dir
+/u/hwett/Desktop/graphics/catwalk/build/src/CMakeFiles/edit_cache.dir
