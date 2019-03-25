@@ -44,6 +44,10 @@ struct Joint {
 	glm::fquat rel_orientation;     // rotation w.r.t. it's parent. Used for animation.
 	glm::vec3 init_position;        // initial position of this joint
 	glm::vec3 init_rel_position;    // initial relative position to its parent
+	//god help
+	glm::mat4 t;
+	glm::mat4 b;
+	glm::mat4 d;
 	std::vector<int> children;
 };
 
@@ -81,13 +85,25 @@ struct Skeleton {
 	// FIXME: create skeleton and bone data structures
 
 	void add_joint(Joint& j){
+			j.t = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+			if(j.joint_index > 0){
+				glm::vec3 temp = j.init_position - joints[j.parent_index].init_position;
+				j.b = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,temp[0],temp[1],temp[2],1);
+				j.d = joints[j.parent_index].d * j.b * j.t;
+			} else {
+					glm::vec3 temp = j.init_position;
+					j.b = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,temp[0],temp[1],temp[2],1);
+					j.d = j.b * j.t;
+			}
 			joints.push_back(j);
 			// add current joint to parent's child list
-			joints[j.parent_index].children.push_back(j.joint_index);
+			if(j.parent_index >= 0){
+				joints[j.parent_index].children.push_back(j.joint_index);
+			}
 	}
 
 	void calculate_orientations(Joint root, glm::fquat orientation) {
-		
+
 	}
 };
 
