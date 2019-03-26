@@ -16,6 +16,116 @@ namespace {
 	// TIPS: The implement is provided by the ray-tracer starter code.
 }
 
+bool intersectLocal(glm::vec3& p, glm::vec3& dir, float& t){
+
+	if( intersectCaps(p, dir, t) ) {
+		float t2;
+		if( intersectBody(p, dir, t2) ) {
+			if( t2 < t ) {
+				t = t2;
+			}
+		}
+		return true;
+	} else {
+		return intersectBody(p, dir, t);
+	}
+}
+
+bool intersectBody(glm::vec3& p, glm::vec3& dir, float& t){
+	double x0 = p[0];
+	double y0 = p[1];
+	double x1 = dir[0];
+	double y1 = dir[1];
+
+	double a = x1*x1+y1*y1;
+	double b = 2.0*(x0*x1 + y0*y1);
+	double c = x0*x0 + y0*y0 - 1.0;
+
+	if( 0.0 == a ) {
+		// This implies that x1 = 0.0 and y1 = 0.0, which further
+		// implies that the ray is aligned with the body of the cylinder,
+		// so no intersection.
+		return false;
+	}
+
+	double discriminant = b*b - 4.0*a*c;
+
+	if( discriminant < 0.0 ) {
+		return false;
+	}
+	
+	discriminant = sqrt( discriminant );
+
+	double t2 = (-b + discriminant) / (2.0 * a);
+
+	if( t2 <= 0.00001 ) {
+		return false;
+	}
+
+	double t1 = (-b - discriminant) / (2.0 * a);
+
+	if( t1 > 0.00001 ) {
+		// Two intersections.
+		glm::dvec3 P = p + t1 * dir;
+		double z = P[2];
+		if( z >= 0.0 && z <= 1.0 ) {
+			// It's okay.
+			t = t1;
+			return true;
+		}
+	}
+
+	glm::dvec3 P = p + t2 * dir;
+	double z = P[2];
+	if( z >= 0.0 && z <= 1.0 ) {
+		t = t2;
+		return true;
+	}
+
+	return false;
+}
+
+bool intersectCaps(glm::vec3& pos, glm::vec3& dir, float& t){
+
+	double pz = pos[2];
+	double dz = dir[2];
+
+	if( 0.0 == dz ) {
+		return false;
+	}
+
+	double t1;
+	double t2;
+
+	if( dz > 0.0 ) {
+		t1 = (-pz)/dz;
+		t2 = (1.0-pz)/dz;
+	} else {
+		t1 = (1.0-pz)/dz;
+		t2 = (-pz)/dz;
+	}
+
+	if( t2 < 0.00001 ) {
+		return false;
+	}
+
+	if( t1 >= 0.00001 ) {
+		glm::dvec3 p( pos + t1 * dir);
+		if( (p[0]*p[0] + p[1]*p[1]) <= 1.0 ) {
+			t = t1;
+			return true;
+		}
+	}
+	glm::dvec3 p( pos + t2 * dir );
+	if( (p[0]*p[0] + p[1]*p[1]) <= 1.0 ) {
+		t = t2;
+		return true;
+	}
+
+	return false;
+}
+
+
 GUI::GUI(GLFWwindow* window, int view_width, int view_height, int preview_height)
 	:window_(window), preview_height_(preview_height)
 {
@@ -128,6 +238,15 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	}
 
 	// FIXME: highlight bones that have been moused over
+	//go from screen coords to ndc (divide by width, multiply by 2 and subtract 1)
+	//z is at 1
+	// multiply by mvp inverse (wmouse)
+	//position is eye
+	// direction is wmouse - eye
+	//loop through joints and transform ray to be in local coord
+	// call cylinderintersect
+	//set current bone index and stop
+
 	current_bone_ = -1;
 }
 
