@@ -10,28 +10,17 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include <glm/gtx/string_cast.hpp>
+
 namespace {
 	// FIXME: Implement a function that performs proper
 	//        ray-cylinder intersection detection
 	// TIPS: The implement is provided by the ray-tracer starter code.
 }
+using namespace std;
 
-bool intersectLocal(glm::vec3& p, glm::vec3& dir, float& t){
 
-	if( intersectCaps(p, dir, t) ) {
-		float t2;
-		if( intersectBody(p, dir, t2) ) {
-			if( t2 < t ) {
-				t = t2;
-			}
-		}
-		return true;
-	} else {
-		return intersectBody(p, dir, t);
-	}
-}
-
-bool intersectBody(glm::vec3& p, glm::vec3& dir, float& t){
+bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t){
 	double x0 = p[0];
 	double y0 = p[1];
 	double x1 = dir[0];
@@ -66,7 +55,7 @@ bool intersectBody(glm::vec3& p, glm::vec3& dir, float& t){
 
 	if( t1 > 0.00001 ) {
 		// Two intersections.
-		glm::dvec3 P = p + t1 * dir;
+		glm::dvec3 P = p + (t1 * dir);
 		double z = P[2];
 		if( z >= 0.0 && z <= 1.0 ) {
 			// It's okay.
@@ -75,7 +64,7 @@ bool intersectBody(glm::vec3& p, glm::vec3& dir, float& t){
 		}
 	}
 
-	glm::dvec3 P = p + t2 * dir;
+	glm::dvec3 P = p + (t2 * dir);
 	double z = P[2];
 	if( z >= 0.0 && z <= 1.0 ) {
 		t = t2;
@@ -85,7 +74,7 @@ bool intersectBody(glm::vec3& p, glm::vec3& dir, float& t){
 	return false;
 }
 
-bool intersectCaps(glm::vec3& pos, glm::vec3& dir, float& t){
+bool intersectCaps(glm::dvec3& pos, glm::dvec3 dir, double& t){
 
 	double pz = pos[2];
 	double dz = dir[2];
@@ -110,13 +99,13 @@ bool intersectCaps(glm::vec3& pos, glm::vec3& dir, float& t){
 	}
 
 	if( t1 >= 0.00001 ) {
-		glm::dvec3 p( pos + t1 * dir);
+		glm::dvec3 p = pos + (t1 * dir);
 		if( (p[0]*p[0] + p[1]*p[1]) <= 1.0 ) {
 			t = t1;
 			return true;
 		}
 	}
-	glm::dvec3 p( pos + t2 * dir );
+	glm::dvec3 p =  pos + (t2 * dir);
 	if( (p[0]*p[0] + p[1]*p[1]) <= 1.0 ) {
 		t = t2;
 		return true;
@@ -125,6 +114,21 @@ bool intersectCaps(glm::vec3& pos, glm::vec3& dir, float& t){
 	return false;
 }
 
+
+bool intersectLocal(glm::dvec3& p, glm::dvec3& dir, double& t){
+
+	if( intersectCaps(p, dir, t) ) {
+		double t2;
+		if( intersectBody(p, dir, t2) ) {
+			if( t2 < t ) {
+				t = t2;
+			}
+		}
+		return true;
+	} else {
+		return intersectBody(p, dir, t);
+	}
+}
 
 GUI::GUI(GLFWwindow* window, int view_width, int view_height, int preview_height)
 	:window_(window), preview_height_(preview_height)
@@ -246,6 +250,16 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	//loop through joints and transform ray to be in local coord
 	// call cylinderintersect
 	//set current bone index and stop
+	double ndc_x = mouse_x * 2/ view_width_ -1;
+	double ndc_y = (view_height_ - mouse_y) * 2 / view_height_ -1;
+	glm::vec4 ndc_coords = glm::vec4(ndc_x,ndc_y, 1, 1);
+	//cout<<"ndc coords "<< glm::to_string(ndc_coords)<<endl;
+	//glm::mat4 vp =  view_matrix_ * projection_matrix_;
+	glm::vec4 world_coords = glm::inverse(view_matrix_)*glm::inverse(projection_matrix_) * ndc_coords;
+	world_coords = world_coords/world_coords[3];
+	//cout<<"world coords "<< glm::to_string(world_coords)<<endl;
+	glm::vec4 dir = glm::vec4(eye_,1) - world_coords;
+	cout<<"ray direction "<< glm::to_string(dir)<<endl;
 
 	current_bone_ = -1;
 }
