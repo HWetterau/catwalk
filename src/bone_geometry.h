@@ -85,9 +85,14 @@ struct Skeleton {
 	// FIXME: create skeleton and bone data structures
 
 	void add_joint(Joint& j){
-			j.t = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+			j.t = glm::mat4(1.0f);
 			if(j.joint_index > 0){
+				//mat4 t: tangent is j. init_position - parent init init_position
+				// normal: find smallest value of tangent, set to 1 then cross
+				//binormal: cross tangent and normal
+				//relative pos is init position in parents coord system multiply by inverse of parent
 				glm::vec3 temp = j.init_position - joints[j.parent_index].init_position;
+				j.init_rel_position = temp;
 				j.b = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,temp[0],temp[1],temp[2],1);
 				j.d = joints[j.parent_index].d * j.b * j.t;
 			} else {
