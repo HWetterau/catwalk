@@ -50,6 +50,13 @@ const char* bone_fragment_shader =
 ;
 
 // FIXME: Add more shaders here.
+const char* cylinder_vertex_shader =
+#include "shaders/cylinder.vert"
+;
+
+const char* cylinder_fragment_shader =
+#include "shaders/cylinder.frag"
+;
 
 void ErrorCallback(int error, const char* description) {
 	std::cerr << "GLFW Error: " << description << "\n";
@@ -152,7 +159,8 @@ int main(int argc, char* argv[])
 	std::function<glm::mat4()> identity_mat = [](){ return glm::mat4(1.0f); };
 	std::function<glm::vec3()> cam_data = [&gui](){ return gui.getCamera(); };
 	std::function<glm::vec4()> lp_data = [&light_position]() { return light_position; };
-
+	
+	
 	auto std_model = std::make_shared<ShaderUniform<const glm::mat4*>>("model", model_data);
 	auto floor_model = make_uniform("model", identity_mat);
 	auto std_view = make_uniform("view", view_data);
@@ -176,6 +184,12 @@ int main(int argc, char* argv[])
 	auto joint_rot = make_uniform("joint_rot", rot_data);
 	// FIXME: define more ShaderUniforms for RenderPass if you want to use it.
 	//        Otherwise, do whatever you like here
+	std::function<glm::mat4()> bone_transform = [&gui](){ return gui.boneTransform(); };
+	
+	auto bone_trans = make_uniform("bone_transform", bone_transform);
+
+
+
 
 	// Floor render pass
 	RenderDataInput floor_pass_input;
@@ -246,8 +260,15 @@ int main(int argc, char* argv[])
 
 	RenderDataInput cylinder_pass_input;
 	// questionable second to last argument (size of element)
-	cylinder_pass_input.assign(0, "cyl", cylinder_mesh.vertices.data(), cylinder_mesh.vertices.size(), 4, GL_FLOAT);
-	cylinder_pass_input.assignIndex(cylinder_mesh.indices.data(), cylinder_mesh.indices.size(), 3);
+	cylinder_pass_input.assign(0, "vertex_position", cylinder_mesh.vertices.data(), cylinder_mesh.vertices.size(), 4, GL_FLOAT);
+	cylinder_pass_input.assignIndex(cylinder_mesh.indices.data(), cylinder_mesh.indices.size(), 2);
+
+	RenderPass cylinder_pass(-1, cylinder_pass_input,
+		{ cylinder_vertex_shader, nullptr, cylinder_fragment_shader},
+		{ std_model, std_view, std_proj, bone_trans},
+		{ "fragment_color" }
+		);
+
 
 	float aspect = 0.0f;
 	std::cout << "center = " << mesh.getCenter() << "\n";
@@ -297,6 +318,13 @@ int main(int argc, char* argv[])
 			                              GL_UNSIGNED_INT, 0));
 		}
 		draw_cylinder = (current_bone != -1 && gui.isTransparent());
+		if (draw_cylinder) {
+			std::cout<<" drawing cylinder! "<<std::endl;
+			cylinder_pass.setup();
+			CHECK_GL_ERROR(glDrawElements(GL_LINES,
+			                              cylinder_mesh.indices.size() * 2,
+			                              GL_UNSIGNED_INT, 0));
+		}
 
 		// Then draw floor.
 		if (draw_floor) {

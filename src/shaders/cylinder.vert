@@ -5,7 +5,8 @@ uniform mat4 projection;
 uniform mat4 model;
 uniform mat4 view;
 in vec4 vertex_position;
-
+void main() {
+    gl_Position = projection* view *bone_transform* vertex_position;
 // FIXME: Implement your vertex shader for cylinders
 // Note: you need call sin/cos to transform the input mesh to a cylinder
-)zzz"
+})zzz"

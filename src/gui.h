@@ -32,6 +32,8 @@ public:
 	static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 	static void MouseScrollCallback(GLFWwindow* window, double dx, double dy);
 
+	glm::mat4 boneTransform();
+
 	glm::vec3 getCenter() const { return center_; }
 	const glm::vec3& getCamera() const { return eye_; }
 	bool isPoseDirty() const { return pose_changed_; }

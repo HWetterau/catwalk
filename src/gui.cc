@@ -28,7 +28,7 @@ bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t, double height){
 
 	double a = x1*x1+y1*y1;
 	double b = 2.0*(x0*x1 + y0*y1);
-	double c = x0*x0 + y0*y0 - 1.0;
+	double c = x0*x0 + y0*y0 - pow(kCylinderRadius,2);
 
 	if( 0.0 == a ) {
 		// This implies that x1 = 0.0 and y1 = 0.0, which further
@@ -229,6 +229,27 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 	// FIXME: implement other controls here.
 }
 
+glm::mat4 GUI::boneTransform(){
+	Joint j = mesh_->skeleton.joints[current_bone_];
+	glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
+	glm::vec3 tangent = glm::normalize(parentpos - j.position );
+		glm::vec3 n;
+		if(tangent[0] <= tangent[1] && tangent[0] <= tangent[2]){
+				n = glm::vec3(1,0,0);
+		} else if (tangent[1] <= tangent[0] && tangent[1] <= tangent[2]) {
+				n = glm::vec3(0,1,0);
+		} else {
+				n = glm::vec3(0,0,1);
+		}
+		glm::vec3 normal = glm::normalize(glm::cross(tangent, n));
+		glm::vec3 bitan = glm::normalize(glm::cross(tangent,normal));
+		double height = glm::distance(parentpos,j.position);
+		glm::vec3 pos = (parentpos + j.position) * glm::vec3(.5, .5, .5);
+		glm::mat4 scale = glm::mat4(0.5, 0, 0, 0, 0, height, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1);
+		glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(j.position,1)));
+		return toworld * scale;
+}
+
 void GUI::mousePosCallback(double mouse_x, double mouse_y)
 {
 	last_x_ = current_x_;
@@ -283,7 +304,8 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	//cout<<"world coords "<< glm::to_string(world_coords)<<endl;
 	glm::vec4 dir = world_coords - glm::vec4(eye_,1);
 	//cout<<"ray direction "<< glm::to_string(dir)<<endl;
-	bool intersection = false;
+	int min_bone = -1;
+	double min_time = 0;
 	for(int bone = 1; bone < mesh_->getNumberOfBones(); ++bone){
 		Joint j = mesh_->skeleton.joints[bone];
 		glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
@@ -312,23 +334,15 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		
 
 		if (intersectLocal(glm::dvec3(tolocal*glm::vec4(eye_,1)), glm::dvec3(tolocal*dir),time,cyl_len)){
-			intersection = true;
-			current_bone_ = bone;
-			break;
-		}
-		else{
-			
+			if (min_bone == -1 || time < min_time ) {
+				min_time = time;
+				min_bone = bone;
+			}
 		}
 	}
-	if(intersection){
-			cout<<"***************intersection*****************"<<endl;
-			cout << "bone # " << current_bone_ << endl;
-			
-	} else {
-		cout<<"no intersection"<<endl;
-	}
+	current_bone_ = min_bone;
 
-	current_bone_ = -1;
+	
 }
 
 void GUI::mouseButtonCallback(int button, int action, int mods)
