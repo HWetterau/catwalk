@@ -57,8 +57,8 @@ bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t, double height){
 		// Two intersections.
 		glm::dvec3 P = p + (t1 * dir);
 		double z = P[2];
-		if( z >= 0.0 && z <= 1.0 ) {
-			// It's okay.
+		if( z >= 0.0 && z <= height) {
+			// It's okay
 			t = t1;
 			return true;
 		}
@@ -101,7 +101,7 @@ bool intersectCaps(glm::dvec3& pos, glm::dvec3 dir, double& t){
 
 	if( t1 >= 0.00001 ) {
 		glm::dvec3 p = pos + (t1 * dir);
-		if( (p[0]*p[0] + p[1]*p[1]) <= 1.0 ) {
+		if( (p[0]*p[0] + p[1]*p[1]) <= pow(kCylinderRadius,2) ) {
 			t = t1;
 			return true;
 		}
@@ -283,7 +283,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	//cout<<"world coords "<< glm::to_string(world_coords)<<endl;
 	glm::vec4 dir = world_coords - glm::vec4(eye_,1);
 	//cout<<"ray direction "<< glm::to_string(dir)<<endl;
-
+	bool intersection = false;
 	for(int bone = 1; bone < mesh_->getNumberOfBones(); ++bone){
 		Joint j = mesh_->skeleton.joints[bone];
 		glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
@@ -294,7 +294,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		//binormal: cross tangent and normal
 		//relative pos is init position in parents coord system multiply by inverse of parent's D
 		//origin is the init_position
-		glm::vec3 tangent = glm::normalize(j.position - parentpos);
+		glm::vec3 tangent = glm::normalize(parentpos - j.position );
 		glm::vec3 n;
 		if(tangent[0] <= tangent[1] && tangent[0] <= tangent[2]){
 				n = glm::vec3(1,0,0);
@@ -305,18 +305,27 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		}
 		glm::vec3 normal = glm::normalize(glm::cross(tangent, n));
 		glm::vec3 bitan = glm::normalize(glm::cross(tangent,normal));
-		glm::mat4 tolocal = glm::inverse(glm::mat4(glm::vec4(bitan,0),glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(parentpos,1)));
+		glm::mat4 tolocal = glm::inverse(glm::mat4(glm::vec4(bitan,0),glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(j.position,1)));
 		double time;
 		glm::mat4 inverse = glm::inverse(j.d);
 		double cyl_len = glm::distance(j.position,parentpos);
+		
 
 		if (intersectLocal(glm::dvec3(tolocal*glm::vec4(eye_,1)), glm::dvec3(tolocal*dir),time,cyl_len)){
-			cout<<"intersection"<<endl;
+			intersection = true;
 			current_bone_ = bone;
+			break;
 		}
 		else{
-			cout<<"no intersection"<<endl;
+			
 		}
+	}
+	if(intersection){
+			cout<<"***************intersection*****************"<<endl;
+			cout << "bone # " << current_bone_ << endl;
+			
+	} else {
+		cout<<"no intersection"<<endl;
 	}
 
 	current_bone_ = -1;
