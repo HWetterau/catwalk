@@ -87,10 +87,7 @@ struct Skeleton {
 	void add_joint(Joint& j){
 			j.t = glm::mat4(1.0f);
 			if(j.joint_index > 0){
-				//mat4 t: tangent is j. init_position - parent init init_position
-				// normal: find smallest value of tangent, set to 1 then cross
-				//binormal: cross tangent and normal
-				//relative pos is init position in parents coord system multiply by inverse of parent
+			
 				glm::vec3 temp = j.init_position - joints[j.parent_index].init_position;
 				j.init_rel_position = temp;
 				j.b = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,temp[0],temp[1],temp[2],1);
@@ -106,10 +103,24 @@ struct Skeleton {
 				joints[j.parent_index].children.push_back(j.joint_index);
 			}
 	}
-
-	void calculate_orientations(Joint root, glm::fquat orientation) {
-
+	void set_d(int index, glm::mat4 R){
+		Joint& j = joints[index];
+		j.d = R * j.d;
+		for(int child: j.children){
+			update_d(child);
+		}
 	}
+	void update_d(int index){
+		if(index > 0){
+			Joint& j = joints[index];
+			j.d = joints[j.parent_index].d * j.b * j.t;
+		}
+		for(int child: j.children){
+			update_d(child);
+		}
+	}
+
+	
 };
 
 struct Mesh {
