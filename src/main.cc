@@ -58,6 +58,14 @@ const char* cylinder_fragment_shader =
 #include "shaders/cylinder.frag"
 ;
 
+const char* axes_vertex_shader =
+#include "shaders/axes.vert"
+;
+
+const char* axes_fragment_shader =
+#include "shaders/axes.frag"
+;
+
 void ErrorCallback(int error, const char* description) {
 	std::cerr << "GLFW Error: " << description << "\n";
 }
@@ -269,6 +277,17 @@ int main(int argc, char* argv[])
 		{ "fragment_color" }
 		);
 
+	RenderDataInput axes_pass_input;
+	// questionable second to last argument (size of element)
+	axes_pass_input.assign(0, "vertex_position", axes_mesh.vertices.data(), axes_mesh.vertices.size(), 4, GL_FLOAT);
+	axes_pass_input.assignIndex(axes_mesh.indices.data(), axes_mesh.indices.size(), 2);
+
+	RenderPass axes_pass(-1, axes_pass_input,
+		{ axes_vertex_shader, nullptr, axes_fragment_shader},
+		{ std_model, std_view, std_proj, bone_trans},
+		{ "fragment_color" }
+		);
+
 
 	float aspect = 0.0f;
 	std::cout << "center = " << mesh.getCenter() << "\n";
@@ -319,10 +338,13 @@ int main(int argc, char* argv[])
 		}
 		draw_cylinder = (current_bone != -1 && gui.isTransparent());
 		if (draw_cylinder) {
-			std::cout<<" drawing cylinder! "<<std::endl;
 			cylinder_pass.setup();
 			CHECK_GL_ERROR(glDrawElements(GL_LINES,
 			                              cylinder_mesh.indices.size() * 2,
+			                              GL_UNSIGNED_INT, 0));
+			axes_pass.setup();
+			CHECK_GL_ERROR(glDrawElements(GL_LINES,
+			                              axes_mesh.indices.size() * 2,
 			                              GL_UNSIGNED_INT, 0));
 		}
 
