@@ -61,8 +61,8 @@ void create_cylinder_mesh(LineMesh& cylinder_mesh)
 void create_axes_mesh(LineMesh& axes_mesh)
 {
 	axes_mesh.vertices.push_back(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-	axes_mesh.vertices.push_back(glm::vec4(2.0f, 0.0f, 0.0f, 1.0f));
-	axes_mesh.vertices.push_back(glm::vec4(0.0f, 0.0f, 2.0f, 1.0f));
+	axes_mesh.vertices.push_back(glm::vec4(4.0f, 0.0f, 0.0f, 1.0f));
+	axes_mesh.vertices.push_back(glm::vec4(0.0f, 0.0f, 4.0f, 1.0f));
 	axes_mesh.indices.push_back(glm::uvec2(0, 1));
 	axes_mesh.indices.push_back(glm::uvec2(0, 2));
 }

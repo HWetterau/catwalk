@@ -87,7 +87,7 @@ struct Skeleton {
 	void add_joint(Joint& j){
 			j.t = glm::mat4(1.0f);
 			if(j.joint_index > 0){
-			
+
 				glm::vec3 temp = j.init_position - joints[j.parent_index].init_position;
 				j.init_rel_position = temp;
 				j.b = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,temp[0],temp[1],temp[2],1);
@@ -111,8 +111,8 @@ struct Skeleton {
 		}
 	}
 	void update_d(int index){
-		if(index > 0){
 			Joint& j = joints[index];
+		if(index > 0){
 			j.d = joints[j.parent_index].d * j.b * j.t;
 		}
 		for(int child: j.children){
@@ -120,7 +120,7 @@ struct Skeleton {
 		}
 	}
 
-	
+
 };
 
 struct Mesh {

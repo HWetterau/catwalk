@@ -8,7 +8,8 @@ in vec4 vertex_position;
 void main() {
 	mat4 mvp = projection * view * model;
 	vec4 position = vertex_position;
-	gl_Position = mvp * bone_transform * position;
+	//mat4 scale = mat4(2.0);
+	gl_Position = mvp * bone_transform  * position;
 	if (position.x == 0 && position.y == 0) {
 		color = vec4(1, 0, 0, 1);
 	} else {

@@ -130,26 +130,7 @@ bool intersectLocal(glm::dvec3 p, glm::dvec3 dir, double& t, double height){
 		return intersectBody(p, dir, t, height);
 	}
 }
-// float rayIntersect(glm::vec3 ray_pos, glm::vec3 ray_dir, glm::vec3 b1, glm::vec3 b2){
-// 	glm::vec3 bone_dir = b2 - b1;
-// 	glm::vec3 diff = ray_pos - b1;
-// 	float a = glm::dot(ray_dir, ray_dir)
-// 	float b = glm::dot(ray_dir, bone_dir);
-// 	float c = glm::dot(bone_dir, bone_dir); // bone length squared
-// 	float d = glm::dot(ray_dir, diff);
-// 	float e = glm::dot(bone_dir, diff);
-// 	float D = a*c - b*b;
-// 	float ray_point,bone_point;
-// 	if(D < 0.000001){ //almost parallel
-// 		ray_point = 0;
-// 		bone_point = (b > c ? d/b : e/c );
-// 	} else {
-// 		ray_point = (b*e - c*d) / D;
-// 		bone_point = (a*e - b*d) / D;
-// 	}
-// 	glm::vec3 dp = diff + (ray_point * ray_dir) - (bone_point* bone_dir);
-// 	return glm::length(dp);
-// }
+
 
 
 GUI::GUI(GLFWwindow* window, int view_width, int view_height, int preview_height)
@@ -232,7 +213,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 glm::mat4 GUI::boneTransform(){
 	Joint j = mesh_->skeleton.joints[current_bone_];
 	glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
-	glm::vec3 tangent = glm::normalize(parentpos - j.position );
+	glm::vec3 tangent = glm::normalize( j.position - parentpos);
 		glm::vec3 n;
 		if(tangent[0] <= tangent[1] && tangent[0] <= tangent[2]){
 				n = glm::vec3(1,0,0);
@@ -245,8 +226,8 @@ glm::mat4 GUI::boneTransform(){
 		glm::vec3 bitan = glm::normalize(glm::cross(tangent,normal));
 		double height = glm::distance(parentpos,j.position);
 		glm::vec3 pos = (parentpos + j.position) * glm::vec3(.5, .5, .5);
-		glm::mat4 scale = glm::mat4(0.5, 0, 0, 0, 0, height, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1);
-		glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(j.position,1)));
+		glm::mat4 scale = glm::mat4(kCylinderRadius, 0, 0, 0, 0, height, 0, 0, 0, 0, kCylinderRadius, 0, 0, 0, 0, 1);
+		glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(parentpos,1)));
 		return toworld * scale;
 }
 
@@ -282,6 +263,18 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		look_ = glm::column(orientation_, 2);
 	} else if (drag_bone && current_bone_ != -1) {
 		// FIXME: Handle bone rotation
+		glm::vec4 parentpos =  glm::vec4(mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].position, 1);
+		parentpos = projection_matrix_ * view_matrix_ * parentpos;
+		parentpos = parentpos / glm::vec4(parentpos.w,parentpos.w,parentpos.w,parentpos.w);
+		glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*view_height_/2);
+		cout<<"ndc "<<glm::to_string(ndc_coords)<<endl;
+		glm::vec2 a = mouse_start - ndc_coords;
+		glm::vec2 b = mouse_end - ndc_coords;
+		cout << "a " << glm::to_string(a) << endl;
+		cout << "b " << glm::to_string(b) << endl;
+		double det = a.x*b.y - a.y*b.x;
+		double angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
+		std::cout<< "angle "<< angle<<std::endl;
 		return ;
 	}
 
@@ -331,7 +324,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		double time;
 		glm::mat4 inverse = glm::inverse(j.d);
 		double cyl_len = glm::distance(j.position,parentpos);
-		
+
 
 		if (intersectLocal(glm::dvec3(tolocal*glm::vec4(eye_,1)), glm::dvec3(tolocal*dir),time,cyl_len)){
 			if (min_bone == -1 || time < min_time ) {
@@ -342,7 +335,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	}
 	current_bone_ = min_bone;
 
-	
+
 }
 
 void GUI::mouseButtonCallback(int button, int action, int mods)
