@@ -44,6 +44,9 @@ public:
 	const int* getCurrentBonePointer() const { return &current_bone_; }
 	bool setCurrentBone(int i);
 
+	bool saveScreenshot() const { return save_screen_; }
+	void resetScreenshot() { save_screen_ = false; }
+
 	bool isTransparent() const { return transparent_; }
 	bool isPlaying() const { return play_; }
 	float getCurrentPlayTime() const;
@@ -69,6 +72,8 @@ private:
 	float rotation_speed_ = 0.02f;
 	float zoom_speed_ = 0.1f;
 	float aspect_;
+
+	bool save_screen_ = false;
 
 	glm::vec3 eye_ = glm::vec3(0.0f, 0.1f, camera_distance_);
 	glm::vec3 up_ = glm::vec3(0.0f, 1.0f, 0.0f);

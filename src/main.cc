@@ -5,6 +5,7 @@
 #include "render_pass.h"
 #include "config.h"
 #include "gui.h"
+#include <jpegio.h>
 
 #include <algorithm>
 #include <fstream>
@@ -17,6 +18,8 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/io.hpp>
 #include <debuggl.h>
+
+using namespace std;
 
 int window_width = 800, window_height = 600;
 const std::string window_title = "Skinning";
@@ -368,6 +371,14 @@ int main(int argc, char* argv[])
 			if (mid == 0) // Fallback
 				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, mesh.faces.size() * 3, GL_UNSIGNED_INT, 0));
 #endif
+		}
+
+		if (gui.saveScreenshot()) {
+			unsigned char* pixels = new unsigned char[window_width * window_height * 3];
+			glReadPixels(0, 0, window_width, window_height, GL_RGB, GL_UNSIGNED_BYTE,pixels);
+			string name = "capture.jpg";
+			bool success = SaveJPEG(name, window_width, window_height, pixels);
+			gui.resetScreenshot();
 		}
 
 		// Poll and swap.

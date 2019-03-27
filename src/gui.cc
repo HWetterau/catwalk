@@ -1,6 +1,5 @@
 #include "gui.h"
 #include "config.h"
-#include <jpegio.h>
 #include "bone_geometry.h"
 #include <iostream>
 #include <algorithm>
@@ -11,7 +10,6 @@
 #include <glm/gtx/transform.hpp>
 
 #include <glm/gtx/string_cast.hpp>
-#include <math.h>
 
 namespace {
 	// FIXME: Implement a function that performs proper
@@ -197,6 +195,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 	}
 	if (key == GLFW_KEY_J && action == GLFW_RELEASE) {
 		//FIXME save out a screenshot using SaveJPEG
+		save_screen_ = true;
 	}
 	if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL)) {
 		if (action == GLFW_RELEASE)
@@ -233,7 +232,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 glm::mat4 GUI::boneTransform(){
 	Joint j = mesh_->skeleton.joints[current_bone_];
 	glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
-	glm::vec3 tangent = glm::normalize(j.position - parentpos );
+	glm::vec3 tangent = glm::normalize(parentpos - j.position );
 		glm::vec3 n;
 		if(tangent[0] <= tangent[1] && tangent[0] <= tangent[2]){
 				n = glm::vec3(1,0,0);
@@ -247,7 +246,7 @@ glm::mat4 GUI::boneTransform(){
 		double height = glm::distance(parentpos,j.position);
 		glm::vec3 pos = (parentpos + j.position) * glm::vec3(.5, .5, .5);
 		glm::mat4 scale = glm::mat4(0.5, 0, 0, 0, 0, height, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1);
-		glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(parentpos,1)));
+		glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(j.position,1)));
 		return toworld * scale;
 }
 
@@ -282,8 +281,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
 	} else if (drag_bone && current_bone_ != -1) {
-		// FIXME: Handle bone rotation ?????
-		//double angle = atan2(delta_y, delta_x);
+		// FIXME: Handle bone rotation
 		return ;
 	}
 
@@ -299,7 +297,8 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	double ndc_x = mouse_x * 2/ view_width_ -1;
 	double ndc_y = (view_height_ - mouse_y) * 2 / view_height_ -1;
 	glm::vec4 ndc_coords = glm::vec4(ndc_x,ndc_y, 1, 1);
-
+	//cout<<"ndc coords "<< glm::to_string(ndc_coords)<<endl;
+	//glm::mat4 vp =  view_matrix_ * projection_matrix_;
 	glm::vec4 world_coords = glm::inverse(view_matrix_)*glm::inverse(projection_matrix_) * ndc_coords;
 	world_coords = world_coords/world_coords[3];
 	//cout<<"world coords "<< glm::to_string(world_coords)<<endl;
@@ -329,7 +328,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		glm::vec3 normal = glm::normalize(glm::cross(tangent, n));
 		glm::vec3 bitan = glm::normalize(glm::cross(tangent,normal));
 		glm::mat4 tolocal = glm::inverse(glm::mat4(glm::vec4(bitan,0),glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(j.position,1)));
-		
 		double time;
 		glm::mat4 inverse = glm::inverse(j.d);
 		double cyl_len = glm::distance(j.position,parentpos);
