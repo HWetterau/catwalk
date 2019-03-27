@@ -244,6 +244,11 @@ int main(int argc, char* argv[])
 	// FIXME: Create the RenderPass objects for bones here.
 	//        Otherwise do whatever you like.
 
+	RenderDataInput cylinder_pass_input;
+	// questionable second to last argument (size of element)
+	cylinder_pass_input.assign(0, "cyl", cylinder_mesh.vertices.data(), cylinder_mesh.vertices.size(), 4, GL_FLOAT);
+	cylinder_pass_input.assignIndex(cylinder_mesh.indices.data(), cylinder_mesh.indices.size(), 3);
+
 	float aspect = 0.0f;
 	std::cout << "center = " << mesh.getCenter() << "\n";
 
