@@ -273,9 +273,11 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		cout << "a " << glm::to_string(a) << endl;
 		cout << "b " << glm::to_string(b) << endl;
 		double det = a.x*b.y - a.y*b.x;
-		double angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
+		float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
 		std::cout<< "angle "<< angle<<std::endl;
-		return ;
+		glm::mat4 r = glm::rotate(angle, look_);
+		mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index, r);
+		return;
 	}
 
 	// FIXME: highlight bones that have been moused over
