@@ -47,8 +47,10 @@ void Skeleton::refreshCache(Configuration* target)
 	target->rot.resize(joints.size());
 	target->trans.resize(joints.size());
 	for (size_t i = 0; i < joints.size(); i++) {
-		target->rot[i] = joints[i].orientation;
+		//target->rot[i] = joints[i].orientation;
+		target->rot[i] = glm::quat_cast(glm::mat3(joints[i].d));
 		target->trans[i] = joints[i].position;
+
 	}
 }
 

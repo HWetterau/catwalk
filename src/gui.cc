@@ -20,6 +20,7 @@ using namespace std;
 
 
 bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t, double height){
+	cout<<"intersectBody"<<endl;
 	double x0 = p[0];
 	double y0 = p[1];
 	double x1 = dir[0];
@@ -224,9 +225,10 @@ glm::mat4 GUI::boneTransform(){
 		}
 		glm::vec3 normal = glm::normalize(glm::cross(tangent, n));
 		glm::vec3 bitan = glm::normalize(glm::cross(tangent,normal));
-		double height = glm::distance(parentpos,j.position);
+		double height = glm::distance(glm::vec3(0),j.init_rel_position);
 		glm::vec3 pos = (parentpos + j.position) * glm::vec3(.5, .5, .5);
 		glm::mat4 scale = glm::mat4(kCylinderRadius, 0, 0, 0, 0, height, 0, 0, 0, 0, kCylinderRadius, 0, 0, 0, 0, 1);
+		cout<<"height "<<height<<endl;
 		glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(parentpos,1)));
 		return toworld * scale;
 }
@@ -272,11 +274,13 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		glm::vec2 b = mouse_end - ndc_coords;
 		cout << "a " << glm::to_string(a) << endl;
 		cout << "b " << glm::to_string(b) << endl;
+		//glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
 		double det = a.x*b.y - a.y*b.x;
 		float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
 		std::cout<< "angle "<< angle<<std::endl;
-		glm::mat4 r = glm::rotate(angle, look_);
-		mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index, r);
+		glm::mat4 r = glm::rotate(-angle, look_);
+		mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index,current_bone_, r);
+		pose_changed_ = true;
 		return;
 	}
 
@@ -302,6 +306,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	int min_bone = -1;
 	double min_time = 0;
 	for(int bone = 1; bone < mesh_->getNumberOfBones(); ++bone){
+		//cout<<"in bone loop"<<endl;
 		Joint j = mesh_->skeleton.joints[bone];
 		glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
 		//glm::vec3  = j.init_rel_position
@@ -329,13 +334,18 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 
 
 		if (intersectLocal(glm::dvec3(tolocal*glm::vec4(eye_,1)), glm::dvec3(tolocal*dir),time,cyl_len)){
+			cout<<"intersect"<<endl;
 			if (min_bone == -1 || time < min_time ) {
 				min_time = time;
 				min_bone = bone;
+				cout<<"intersect inner if"<<endl;
+
 			}
 		}
 	}
+
 	current_bone_ = min_bone;
+	//current_bone_ = 1;
 
 
 }

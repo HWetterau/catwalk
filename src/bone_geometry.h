@@ -103,12 +103,18 @@ struct Skeleton {
 				joints[j.parent_index].children.push_back(j.joint_index);
 			}
 	}
-	void rotate(int index, glm::mat4 R){
+	void rotate(int index, int child, glm::mat4 R){
 		Joint& j = joints[index];
 		j.t = j.t * R;
-		for(int child: j.children){
-			update_d(child);
+		if(index > 0){
+			j.d = joints[j.parent_index].d * j.b * j.t;
+		} else {
+			j.d = j.b * j.t;
 		}
+	//	for(int child: j.children){
+			update_d(child);
+		//}
+
 	}
 	void update_d(int index){
 			Joint& j = joints[index];
@@ -117,6 +123,7 @@ struct Skeleton {
 		} else {
 			j.d = j.b * j.t;
 		}
+	//	j.position = glm::vec3(joints[j.parent_index].d * glm::vec4(j.init_rel_position,1));
 		j.position = glm::vec3(j.d * glm::vec4(0,0,0,1));
 		for(int child: j.children){
 			update_d(child);
