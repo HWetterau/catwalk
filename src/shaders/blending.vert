@@ -27,13 +27,13 @@ vec3 qtransform(vec4 q, vec3 v) {
 }
 
 void main() {	
-//	if (w0 == 1) {
+	if (w0 == 1) {
 		//one weight
 		gl_Position = w0*(blend_d_u[jid0] * vert);
-//	} 
-//	else {
-//		gl_Position = (w0*(blend_d_u[jid0]* vert)) + ((1-w0)*(blend_d_u[jid1] * vert));
-//	}
+	} 
+	else {
+		gl_Position = (w0*(blend_d_u[jid0]* vert)) + ((1-w0)*(blend_d_u[jid1] * vert));
+	}
 	// FIXME: Implement linear skinning here
 	//gl_Position = vert;
 	vs_normal = normal;
