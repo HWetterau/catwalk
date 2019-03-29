@@ -26,7 +26,11 @@ vec3 qtransform(vec4 q, vec3 v) {
 	return v + 2.0 * cross(cross(v, q.xyz) - q.w*v, q.xyz);
 }
 
-void main() {	
+void main() {
+
+
+
+	// linear skin blending	
 	if (w0 == 1) {
 		//one weight
 		gl_Position = w0*(blend_d_u[jid0] * vert);
