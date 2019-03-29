@@ -9,6 +9,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <mmdadapter.h>
+#include <iostream>
+
+using namespace std;
 
 class TextureToRender;
 
@@ -104,6 +107,7 @@ struct Skeleton {
 			}
 	}
 	void rotate(int index, int child, glm::mat4 R){
+		cout << "beg rotate" << endl;
 		Joint& j = joints[index];
 		j.t = j.t * R;
 		if(index > 0){
@@ -113,10 +117,12 @@ struct Skeleton {
 		}
 	//	for(int child: j.children){
 			update_d(child);
+		cout << "end rotate" << endl;
 		//}
 
 	}
 	void update_d(int index){
+		cout << "updating" << endl;
 			Joint& j = joints[index];
 		if(index > 0){
 			j.d = joints[j.parent_index].d * j.b * j.t;
