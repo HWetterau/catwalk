@@ -74,6 +74,16 @@ void Mesh::loadPmd(const std::string& fn)
 	// FIXME: load skeleton and blend weights from PMD file,
 	//        initialize std::vectors for the vertex attributes,
 	//        also initialize the skeleton as needed
+
+	vector<SparseTuple> weights;
+	mr.getJointWeights(weights);
+	for (int i = 0; i < weights.size(); ++i) {
+		SparseTuple current = weights[i];
+		joint0.push_back(current.jid0);
+		joint1.push_back(current.jid1);
+		weight_for_joint0.push_back(current.weight0);
+	}
+
 	int id = 0;
 	glm::vec3 wcoord;
 	int pid = -1;

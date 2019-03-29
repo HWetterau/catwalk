@@ -199,6 +199,11 @@ int main(int argc, char* argv[])
 	
 	auto bone_trans = make_uniform("bone_transform", bone_transform);
 
+	std::function<vector<glm::mat4()>> u_matrix  = [&mesh](){ return mesh.load_u(); };
+	auto blend_u = make_uniform("blend_u", u_matrix);
+
+	std::function<vector<glm::mat4()>> d_matrix  = [&mesh](){ return mesh.load_d(); };
+	auto blend_d = make_uniform("blend_d", d_matrix);
 
 
 
@@ -224,6 +229,7 @@ int main(int argc, char* argv[])
 	object_pass_input.assign(4, "vector_from_joint1", mesh.vector_from_joint1.data(), mesh.vector_from_joint1.size(), 3, GL_FLOAT);
 	object_pass_input.assign(5, "normal", mesh.vertex_normals.data(), mesh.vertex_normals.size(), 4, GL_FLOAT);
 	object_pass_input.assign(6, "uv", uv_coordinates.data(), uv_coordinates.size(), 2, GL_FLOAT);
+
 	// TIPS: You won't need vertex position in your solution.
 	//       This only serves the stub shader.
 	object_pass_input.assign(7, "vert", mesh.vertices.data(), mesh.vertices.size(), 4, GL_FLOAT);
@@ -239,7 +245,8 @@ int main(int argc, char* argv[])
 			{ std_model, std_view, std_proj,
 			  std_light,
 			  std_camera, object_alpha,
-			  joint_trans, joint_rot
+			  joint_trans, joint_rot,
+			  blend_u, blend_d
 			},
 			{ "fragment_color" }
 			);

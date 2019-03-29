@@ -107,7 +107,6 @@ struct Skeleton {
 			}
 	}
 	void rotate(int index, int child, glm::mat4 R){
-		cout << "beg rotate" << endl;
 		Joint& j = joints[index];
 		j.t = j.t * R;
 		if(index > 0){
@@ -117,13 +116,11 @@ struct Skeleton {
 		}
 	//	for(int child: j.children){
 			update_d(child);
-		cout << "end rotate" << endl;
 		//}
 
 	}
 	void update_d(int index){
-		cout << "updating" << endl;
-			Joint& j = joints[index];
+		Joint& j = joints[index];
 		if(index > 0){
 			j.d = joints[j.parent_index].d * j.b * j.t;
 		} else {
@@ -168,6 +165,25 @@ struct Mesh {
 
 	void saveAnimationTo(const std::string& fn);
 	void loadAnimationFrom(const std::string& fn);
+
+	vector<glm::mat4> load_u() {
+		vector<glm::mat4> u;
+		u.push_back(skeleton.joints[0].b);
+
+		for (int bone = 1; bone < getNumberOfBones(); ++bone) {
+			u.push_back(skeleton.joints[bone-1].d * skeleton.joints[bone].b);
+		}
+		return u;
+	}
+
+	vector<glm::mat4> load_d() {
+		vector<glm::mat4> d;
+
+		for (int bone = 0; bone < getNumberOfBones(); ++bone) {
+			d.push_back(skeleton.joints[bone].d);
+		}
+		return d;
+	}
 
 private:
 	void computeBounds();

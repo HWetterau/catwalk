@@ -194,13 +194,8 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		else
 			roll_speed = roll_speed_;
 		// FIXME: actually roll the bone here
-		// glm::vec4 axis = glm::vec4(, 0);
-		cout << "roll speed " << roll_speed << endl;
 		glm::mat4 r = glm::rotate(roll_speed, glm::normalize(mesh_->skeleton.joints[current_bone_].init_rel_position));
-		cout << "after r" << endl;
-		// cout<< "current bone " << current_bone_ << endl;
 		mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index, current_bone_, r);
-		//cout << "did everything go wrong?"
 		pose_changed_ = true;
 
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
