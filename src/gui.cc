@@ -20,7 +20,6 @@ using namespace std;
 
 
 bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t, double height){
-	//cout<<"intersectBody"<<endl;
 	double x0 = p[0];
 	double y0 = p[1];
 	double x1 = dir[0];
@@ -76,7 +75,6 @@ bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t, double height){
 }
 
 bool intersectCaps(glm::dvec3& pos, glm::dvec3 dir, double& t){
-
 	double pz = pos[2];
 	double dz = dir[2];
 
@@ -112,7 +110,6 @@ bool intersectCaps(glm::dvec3& pos, glm::dvec3 dir, double& t){
 		t = t2;
 		return true;
 	}
-
 	return false;
 }
 
@@ -314,7 +311,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	int min_bone = -1;
 	double min_time = 0;
 	for(int bone = 1; bone < mesh_->getNumberOfBones(); ++bone){
-		//cout<<"in bone loop"<<endl;
 		Joint j = mesh_->skeleton.joints[bone];
 		glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
 		//glm::vec3  = j.init_rel_position
@@ -326,9 +322,10 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		//origin is the init_position
 		glm::vec3 tangent = glm::normalize(parentpos - j.position );
 		glm::vec3 n;
-		if(tangent[0] <= tangent[1] && tangent[0] <= tangent[2]){
+		glm::vec3 abstan = glm::abs(tangent);
+		if(abstan[0] <= abstan[1] && abstan[0] <= abstan[2]){
 				n = glm::vec3(1,0,0);
-		} else if (tangent[1] <= tangent[0] && tangent[1] <= tangent[2]) {
+		} else if (abstan[1] <= abstan[0] && abstan[1] <= abstan[2]) {
 				n = glm::vec3(0,1,0);
 		} else {
 				n = glm::vec3(0,0,1);
@@ -340,14 +337,11 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		glm::mat4 inverse = glm::inverse(j.d);
 		double cyl_len = glm::distance(j.position,parentpos);
 
-
 		if (intersectLocal(glm::dvec3(tolocal*glm::vec4(eye_,1)), glm::dvec3(tolocal*dir),time,cyl_len)){
-			//cout<<"intersect"<<endl;
+			
 			if (min_bone == -1 || time < min_time ) {
 				min_time = time;
 				min_bone = bone;
-			//	cout<<"intersect inner if"<<endl;
-
 			}
 		}
 	}

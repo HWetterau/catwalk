@@ -199,10 +199,10 @@ int main(int argc, char* argv[])
 	
 	auto bone_trans = make_uniform("bone_transform", bone_transform);
 
-	std::function<vector<glm::mat4()>> u_matrix  = [&mesh](){ return mesh.load_u(); };
+	std::function<vector<glm::mat4>()> u_matrix  = [&mesh](){ return mesh.load_u(); };
 	auto blend_u = make_uniform("blend_u", u_matrix);
 
-	std::function<vector<glm::mat4()>> d_matrix  = [&mesh](){ return mesh.load_d(); };
+	std::function<vector<glm::mat4>()> d_matrix  = [&mesh](){ return mesh.load_d(); };
 	auto blend_d = make_uniform("blend_d", d_matrix);
 
 

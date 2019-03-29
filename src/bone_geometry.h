@@ -120,6 +120,10 @@ struct Skeleton {
 
 	}
 	void update_d(int index){
+		if(index < 0){
+			//cout<<"index < 0"<<endl;
+			return;
+		}
 		Joint& j = joints[index];
 		if(index > 0){
 			j.d = joints[j.parent_index].d * j.b * j.t;
