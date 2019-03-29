@@ -278,12 +278,14 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		glm::vec2 b = mouse_end - ndc_coords;
 		cout << "a " << glm::to_string(a) << endl;
 		cout << "b " << glm::to_string(b) << endl;
-		//glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
+		glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
 		double det = a.x*b.y - a.y*b.x;
 		// float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
 		float angle = atan2(det, glm::dot(a,b));
 		std::cout<< "angle "<< angle<<std::endl;
-		glm::mat4 r = glm::rotate(-angle, look_);
+		//change look to local coordinates
+
+		glm::mat4 r = glm::rotate(-angle, glm::vec3(glm::inverse(parentcoords)*glm::vec4(look_,0)));
 		mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index,current_bone_, r);
 		pose_changed_ = true;
 		return;
