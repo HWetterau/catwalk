@@ -199,11 +199,11 @@ int main(int argc, char* argv[])
 	
 	auto bone_trans = make_uniform("bone_transform", bone_transform);
 
-	std::function<vector<glm::mat4>()> u_matrix  = [&mesh](){ return mesh.load_u(); };
-	auto blend_u = make_uniform("blend_u", u_matrix);
+	std::function<vector<glm::mat4>()> d_u_matrix  = [&mesh](){ return mesh.load_d_u(); };
+	auto blend_d_u = make_uniform("blend_d_u", d_u_matrix);
 
-	std::function<vector<glm::mat4>()> d_matrix  = [&mesh](){ return mesh.load_d(); };
-	auto blend_d = make_uniform("blend_d", d_matrix);
+	// std::function<vector<glm::mat4>()> d_matrix  = [&mesh](){ return mesh.load_d(); };
+	// auto blend_d = make_uniform("blend_d", d_matrix);
 
 
 
@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
 			  std_light,
 			  std_camera, object_alpha,
 			  joint_trans, joint_rot,
-			  blend_u, blend_d
+			  blend_d_u
 			},
 			{ "fragment_color" }
 			);

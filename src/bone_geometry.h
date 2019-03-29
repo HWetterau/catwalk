@@ -170,24 +170,28 @@ struct Mesh {
 	void saveAnimationTo(const std::string& fn);
 	void loadAnimationFrom(const std::string& fn);
 
-	vector<glm::mat4> load_u() {
+	vector<glm::mat4> load_d_u() {
 		vector<glm::mat4> u;
-		u.push_back(skeleton.joints[0].b);
+		u.push_back(skeleton.joints[0].d * glm::inverse(skeleton.joints[0].b));
 
 		for (int bone = 1; bone < getNumberOfBones(); ++bone) {
-			u.push_back(skeleton.joints[bone-1].d * skeleton.joints[bone].b);
+			//u.push_back(glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
+			// u.push_back(skeleton.joints[bone].d*glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
+			u.push_back(skeleton.joints[bone].d*glm::inverse(glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),
+										glm::vec4(0,0,1,0),glm::vec4(skeleton.joints[bone].init_position,1))));
 		}
+
 		return u;
 	}
 
-	vector<glm::mat4> load_d() {
-		vector<glm::mat4> d;
+	// vector<glm::mat4> load_d() {
+	// 	vector<glm::mat4> d;
 
-		for (int bone = 0; bone < getNumberOfBones(); ++bone) {
-			d.push_back(skeleton.joints[bone].d);
-		}
-		return d;
-	}
+	// 	for (int bone = 0; bone < getNumberOfBones(); ++bone) {
+	// 		d.push_back(skeleton.joints[bone].d);
+	// 	}
+	// 	return d;
+	// }
 
 private:
 	void computeBounds();
