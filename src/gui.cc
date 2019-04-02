@@ -269,25 +269,36 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		look_ = glm::column(orientation_, 2);
 	} else if (drag_bone && current_bone_ != -1) {
 		// FIXME: Handle bone rotation
-		glm::vec4 parentpos =  glm::vec4(mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].position, 1);
-		parentpos = projection_matrix_ * view_matrix_ * parentpos;
-		parentpos = parentpos / glm::vec4(parentpos.w,parentpos.w,parentpos.w,parentpos.w);
-		glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*view_height_/2);
-		cout<<"ndc "<<glm::to_string(ndc_coords)<<endl;
-		glm::vec2 a = mouse_start - ndc_coords;
-		glm::vec2 b = mouse_end - ndc_coords;
-		cout << "a " << glm::to_string(a) << endl;
-		cout << "b " << glm::to_string(b) << endl;
-		glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
-		double det = a.x*b.y - a.y*b.x;
-		// float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
-		float angle = atan2(det, glm::dot(a,b));
-		std::cout<< "angle "<< angle<<std::endl;
-		//change look to local coordinates
 
-		glm::mat4 r = glm::rotate(-angle, glm::vec3(glm::inverse(parentcoords)*glm::vec4(look_,0)));
-		mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index,current_bone_, r);
-		pose_changed_ = true;
+		// if(current_bone_ == 0) {
+		// 	//root joint translation
+		// 	glm::mat4 t = glm::mat4(1.0);
+		// 	t[3][0] = delta_x;
+		// 	t[3][1] = delta_y;
+		// 	mesh_->skeleton.translate(t);
+		// 	pose_changed_ = true;
+		// }
+		// else{
+			glm::vec4 parentpos =  glm::vec4(mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].position, 1);
+			parentpos = projection_matrix_ * view_matrix_ * parentpos;
+			parentpos = parentpos / glm::vec4(parentpos.w,parentpos.w,parentpos.w,parentpos.w);
+			glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*view_height_/2);
+			cout<<"ndc "<<glm::to_string(ndc_coords)<<endl;
+			glm::vec2 a = mouse_start - ndc_coords;
+			glm::vec2 b = mouse_end - ndc_coords;
+			cout << "a " << glm::to_string(a) << endl;
+			cout << "b " << glm::to_string(b) << endl;
+			glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
+			double det = a.x*b.y - a.y*b.x;
+			// float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
+			float angle = atan2(det, glm::dot(a,b));
+			std::cout<< "angle "<< angle<<std::endl;
+			//change look to local coordinates
+
+			glm::mat4 r = glm::rotate(-angle, glm::vec3(glm::inverse(parentcoords)*glm::vec4(look_,0)));
+			mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index,current_bone_, r);
+			pose_changed_ = true;
+		// }
 		return;
 	}
 
@@ -349,6 +360,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	}
 
 	current_bone_ = min_bone;
+	cout << "current bone " << current_bone_ <<endl;
 	//current_bone_ = 1;
 
 

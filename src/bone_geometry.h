@@ -85,6 +85,10 @@ struct Skeleton {
 	const glm::vec3* collectJointTrans() const;
 	const glm::fquat* collectJointRot() const;
 
+	glm::vec3* jointTrans();
+	glm::fquat* jointRot();
+
+
 	// FIXME: create skeleton and bone data structures
 
 	void add_joint(Joint& j){
@@ -119,6 +123,12 @@ struct Skeleton {
 		//}
 
 	}
+	void translate(glm::mat4 T){
+		Joint& j = joints[0];
+		j.t = j.t * T;
+		update_d(0);
+	}
+	
 	void update_d(int index){
 		if(index < 0){
 			//cout<<"index < 0"<<endl;
@@ -183,6 +193,34 @@ struct Mesh {
 
 		return u;
 	}
+
+	vector<glm::mat2x4> load_dq() {
+		vector<glm::mat2x4> dq;
+		// const glm::vec3* collectJointTrans() const;
+		// const glm::fquat* collectJointRot() const;
+
+		for (int bone = 0; bone < getNumberOfBones(); ++bone) {
+			//u.push_back(glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
+			// u.push_back(skeleton.joints[bone].d*glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
+			glm::vec3 trans = skeleton.joints[bone].position;
+			glm::fquat rot = glm::quat_cast(glm::mat3(skeleton.joints[bone].d));
+
+			glm::mat2x4 dq_mat;
+			for (int i = 0; i < 4; i++) {
+				dq_mat[0][i] = rot[i];
+			}
+			
+			dq_mat[1][0] = -0.5*(trans[0]*rot[1] + trans[1]*rot[2] + trans[2]*rot[3]);
+			dq_mat[1][1] = 0.5*( trans[0]*rot[0] + trans[1]*rot[3] - trans[2]*rot[2]);
+			dq_mat[1][2] = 0.5*(-trans[0]*rot[3] + trans[1]*rot[0] + trans[2]*rot[1]);
+			dq_mat[1][3] = 0.5*( trans[0]*rot[2] - trans[1]*rot[1] + trans[2]*rot[0]);
+
+
+			dq.push_back(dq_mat);
+		}
+
+		return dq;
+}
 
 	// vector<glm::mat4> load_d() {
 	// 	vector<glm::mat4> d;
