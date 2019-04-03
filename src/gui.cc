@@ -207,6 +207,13 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		current_bone_ %= mesh_->getNumberOfBones();
 	} else if (key == GLFW_KEY_T && action != GLFW_RELEASE) {
 		transparent_ = !transparent_;
+	} else if (key == GLFW_KEY_F && action != GLFW_RELEASE) {
+		//create a keyframe
+	} else if (key == GLFW_KEY_P && action != GLFW_RELEASE) {
+		//either play/pause animation
+		play_ = !play_;
+	} else if (key == GLFW_KEY_R && action != GLFW_RELEASE) {
+		//rewind animation
 	}
 
 	// FIXME: implement other controls here.
@@ -283,16 +290,15 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 			parentpos = projection_matrix_ * view_matrix_ * parentpos;
 			parentpos = parentpos / glm::vec4(parentpos.w,parentpos.w,parentpos.w,parentpos.w);
 			glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*view_height_/2);
-			cout<<"ndc "<<glm::to_string(ndc_coords)<<endl;
+			
 			glm::vec2 a = mouse_start - ndc_coords;
 			glm::vec2 b = mouse_end - ndc_coords;
-			cout << "a " << glm::to_string(a) << endl;
-			cout << "b " << glm::to_string(b) << endl;
+			
 			glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
 			double det = a.x*b.y - a.y*b.x;
 			// float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
 			float angle = atan2(det, glm::dot(a,b));
-			std::cout<< "angle "<< angle<<std::endl;
+	
 			//change look to local coordinates
 
 			glm::mat4 r = glm::rotate(-angle, glm::vec3(glm::inverse(parentcoords)*glm::vec4(look_,0)));
@@ -360,7 +366,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	}
 
 	current_bone_ = min_bone;
-	cout << "current bone " << current_bone_ <<endl;
+
 	//current_bone_ = 1;
 
 
@@ -419,6 +425,11 @@ bool GUI::setCurrentBone(int i)
 
 float GUI::getCurrentPlayTime() const
 {
+	// FIXME: return actual time???
+	// save start time when p is pressed
+	// reset start time when r is pressed
+	// save amount of time run when p (pause) pressed and add when 
+	// it resumes
 	return 0.0f;
 }
 

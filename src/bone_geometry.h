@@ -63,6 +63,7 @@ struct Configuration {
 };
 
 struct KeyFrame {
+	// coming from the skeleton, from jointRot()
 	std::vector<glm::fquat> rel_rot;
 
 	static void interpolate(const KeyFrame& from,

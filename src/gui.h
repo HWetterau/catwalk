@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
+#include "bone_geometry.h"
 
 struct Mesh;
 
@@ -90,6 +91,9 @@ private:
 	bool captureWASDUPDOWN(int key, int action);
 
 	bool play_ = false;
+
+	//store keyframes in gui?
+	vector<KeyFrame> keyframes;
 };
 
 #endif

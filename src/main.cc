@@ -21,8 +21,15 @@
 
 using namespace std;
 
-int window_width = 800, window_height = 600;
-const std::string window_title = "Skinning";
+int window_width = 1280;
+int window_height = 720;
+int main_view_width = 960;
+int main_view_height = 720;
+int preview_width = window_width - main_view_width; // 320
+int preview_height = preview_width / 4 * 3; // 320 / 4 * 3 = 240
+int preview_bar_width = preview_width;
+int preview_bar_height = main_view_height;
+const std::string window_title = "Animation";
 
 const char* vertex_shader =
 #include "shaders/default.vert"
@@ -106,7 +113,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 	GLFWwindow *window = init_glefw();
-	GUI gui(window);
+	GUI gui(window, main_view_width, main_view_height, preview_height);
 
 	std::vector<glm::vec4> floor_vertices;
 	std::vector<glm::uvec3> floor_faces;
@@ -307,10 +314,15 @@ int main(int argc, char* argv[])
 	bool draw_object = true;
 	bool draw_cylinder = true;
 
+	
+	if (argc >= 3) {
+		mesh.loadAnimationFrom(argv[2]);
+	}
+
 	while (!glfwWindowShouldClose(window)) {
 		// Setup some basic window stuff.
 		glfwGetFramebufferSize(window, &window_width, &window_height);
-		glViewport(0, 0, window_width, window_height);
+		glViewport(0, 0, main_view_width, main_view_height);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_MULTISAMPLE);
@@ -329,10 +341,20 @@ int main(int argc, char* argv[])
 		std_model->bind(0);
 #endif
 
-		if (gui.isPoseDirty()) {
+		if (gui.isPlaying()) {
+			std::stringstream title;
+			float cur_time = gui.getCurrentPlayTime();
+			title << window_title << " Playing: "
+			      << std::setprecision(2)
+			      << std::setfill('0') << std::setw(6)
+			      << cur_time << " sec";
+			glfwSetWindowTitle(window, title.str().data());
+			mesh.updateAnimation(cur_time);
+		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
 			gui.clearPose();
 		}
+		// FIXME: update the preview textures here
 
 		int current_bone = gui.getCurrentBone();
 
