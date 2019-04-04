@@ -349,7 +349,8 @@ int main(int argc, char* argv[])
 			      << std::setfill('0') << std::setw(6)
 			      << cur_time << " sec";
 			glfwSetWindowTitle(window, title.str().data());
-			mesh.updateAnimation(cur_time);
+			//pass in animation state to updateAnimation
+			mesh.updateAnimation(cur_time, gui.getAnimationState());
 		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
 			gui.clearPose();

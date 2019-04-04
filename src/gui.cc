@@ -1,6 +1,6 @@
 #include "gui.h"
 #include "config.h"
-#include "bone_geometry.h"
+
 #include <iostream>
 #include <algorithm>
 #include <debuggl.h>
@@ -10,6 +10,7 @@
 #include <glm/gtx/transform.hpp>
 
 #include <glm/gtx/string_cast.hpp>
+
 
 namespace {
 	// FIXME: Implement a function that performs proper
@@ -150,6 +151,7 @@ GUI::GUI(GLFWwindow* window, int view_width, int view_height, int preview_height
 	}
 	float aspect_ = static_cast<float>(view_width_) / view_height_;
 	projection_matrix_ = glm::perspective((float)(kFov * (M_PI / 180.0f)), aspect_, kNear, kFar);
+	state = new AnimationState();
 }
 
 GUI::~GUI()
@@ -161,6 +163,8 @@ void GUI::assignMesh(Mesh* mesh)
 	mesh_ = mesh;
 	center_ = mesh_->getCenter();
 }
+
+
 
 void GUI::keyCallback(int key, int scancode, int action, int mods)
 {
@@ -207,13 +211,36 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		current_bone_ %= mesh_->getNumberOfBones();
 	} else if (key == GLFW_KEY_T && action != GLFW_RELEASE) {
 		transparent_ = !transparent_;
-	} else if (key == GLFW_KEY_F && action != GLFW_RELEASE) {
+	} else if (key == GLFW_KEY_F && action == GLFW_RELEASE) {
 		//create a keyframe
-	} else if (key == GLFW_KEY_P && action != GLFW_RELEASE) {
+		KeyFrame k;
+		for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
+			k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
+		}
+		mesh_->skeleton.keyframes.push_back(k);
+		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
+		cout << "keyframe list size " << mesh_->skeleton.keyframes.size() << endl;
+
+
+	} else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		//either play/pause animation
+		// cout << "state current frame " << state.current_keyframe << endl;
 		play_ = !play_;
-	} else if (key == GLFW_KEY_R && action != GLFW_RELEASE) {
+		if (!play_) {
+			pause_time = getCurrentPlayTime();
+		}
+		play_start = chrono::steady_clock::now();
+		state->old_time = 0;
+
+	} else if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
 		//rewind animation
+		state->current_time = 0;
+		state->current_keyframe = 0;
+		state->next_keyframe = 1;
+		state->old_time = 0;
+		pause_time = 0;
+		play_start = chrono::steady_clock::now();
+
 	}
 
 	// FIXME: implement other controls here.
@@ -430,7 +457,10 @@ float GUI::getCurrentPlayTime() const
 	// reset start time when r is pressed
 	// save amount of time run when p (pause) pressed and add when 
 	// it resumes
-	return 0.0f;
+
+	chrono::time_point<chrono::steady_clock> current = chrono::steady_clock::now();
+	chrono::duration<float> elapsed_time = current - play_start;
+	return elapsed_time.count() + pause_time;
 }
 
 

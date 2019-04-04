@@ -110,12 +110,57 @@ void Mesh::computeBounds()
 	}
 }
 
-void Mesh::updateAnimation(float t)
-{
+void Mesh::updateAnimation(float t, AnimationState* a)
+{	// FIXME: Support Animation Here
+	if (t != -1) {
+		a->current_time = t;
+		float fps = 2.0;
+		//cout << "curr - old " << a->current_time - a->old_time  << endl;
+		if (a->current_time - a->old_time > (1/fps)) {
+			a->old_time = a->current_time;
+			// cout << "current keyframe " << (int)a->current_keyframe << endl;
+			// cout << "next keyframe " << (int)a->next_keyframe << endl;
+ 			if (a->next_keyframe < a->end_keyframe) {
+				a->current_keyframe = a->next_keyframe;
+				a->next_keyframe++;
+
+				// cout <<"new current keyframe " << (int)a->current_keyframe << endl;
+				// cout << "new next keyframe " << (int)a->next_keyframe << endl;
+			} else {
+				a->current_keyframe = a->next_keyframe;
+			}
+
+		}
+		float interp = fps * (a->current_time - a->old_time);
+		KeyFrame result;
+ 		KeyFrame::interpolate(skeleton.keyframes[a->current_keyframe], skeleton.keyframes[a->next_keyframe], interp, result);
+		changeSkeleton(result);
+	}
+
 	skeleton.refreshCache(&currentQ_);
-	// FIXME: Support Animation Here
+	
+
+
+
 }
 
+void Mesh::updateAnimation()
+{	
+	skeleton.refreshCache(&currentQ_);
+}
+
+void Mesh::changeSkeleton(KeyFrame& k)
+{	
+	skeleton.joints[0].t = glm::toMat4(k.rel_rot[0]);
+	skeleton.joints[0].d = skeleton.joints[0].b * skeleton.joints[0].t;
+	skeleton.joints[0].position = glm::vec3(skeleton.joints[0].d * glm::vec4(0,0,0,1));
+	
+	for (int i = 1; i < getNumberOfBones(); ++i) {
+		skeleton.joints[i].t = glm::toMat4(k.rel_rot[i]);
+		skeleton.joints[i].d = skeleton.joints[skeleton.joints[i].parent_index].d * skeleton.joints[i].b * skeleton.joints[i].t;
+		skeleton.joints[i].position = glm::vec3(skeleton.joints[i].d * glm::vec4(0,0,0,1));
+	}
+}
 const Configuration*
 Mesh::getCurrentQ() const
 {

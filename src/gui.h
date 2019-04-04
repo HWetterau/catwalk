@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include "bone_geometry.h"
 
+
 struct Mesh;
 
 /*
@@ -52,6 +53,8 @@ public:
 	bool isPlaying() const { return play_; }
 	float getCurrentPlayTime() const;
 
+	AnimationState* getAnimationState() { return state; }
+
 private:
 	GLFWwindow* window_;
 	Mesh* mesh_;
@@ -93,7 +96,10 @@ private:
 	bool play_ = false;
 
 	//store keyframes in gui?
-	vector<KeyFrame> keyframes;
+
+	AnimationState* state;
+	chrono::time_point<chrono::steady_clock> play_start;
+	float pause_time = 0;
 };
 
 #endif

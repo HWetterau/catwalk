@@ -10,6 +10,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <mmdadapter.h>
 #include <iostream>
+#include <chrono>
 
 using namespace std;
 
@@ -62,6 +63,9 @@ struct Configuration {
 	const auto& rotData() const { return rot; }
 };
 
+
+
+
 struct KeyFrame {
 	// coming from the skeleton, from jointRot()
 	std::vector<glm::fquat> rel_rot;
@@ -69,7 +73,27 @@ struct KeyFrame {
 	static void interpolate(const KeyFrame& from,
 	                        const KeyFrame& to,
 	                        float tau,
-	                        KeyFrame& target);
+	                        KeyFrame& target) {
+		for(int i = 0; i < from.rel_rot.size(); ++i){
+			target.rel_rot.push_back(glm::slerp(from.rel_rot[i], to.rel_rot[i], tau));
+		}
+
+	}
+};
+
+struct AnimationState {
+	int current_keyframe;
+	int next_keyframe;
+
+	int end_keyframe;
+
+	float current_time;
+	float old_time;
+
+	AnimationState(): current_keyframe(0), next_keyframe(1) {}
+
+	//could store interpolation factor but also could calculate
+	
 };
 
 struct LineMesh {
@@ -79,6 +103,7 @@ struct LineMesh {
 
 struct Skeleton {
 	std::vector<Joint> joints;
+	vector<KeyFrame> keyframes;
 
 	Configuration cache;
 
@@ -176,7 +201,8 @@ struct Mesh {
 	int getNumberOfBones() const;
 	glm::vec3 getCenter() const { return 0.5f * glm::vec3(bounds.min + bounds.max); }
 	const Configuration* getCurrentQ() const; // Configuration is abbreviated as Q
-	void updateAnimation(float t = -1.0);
+	void updateAnimation(float t,  AnimationState* a);
+	void updateAnimation();
 
 	void saveAnimationTo(const std::string& fn);
 	void loadAnimationFrom(const std::string& fn);
@@ -222,6 +248,8 @@ struct Mesh {
 
 		return dq;
 }
+	//ADDED THIS, in .cc file
+	void changeSkeleton(KeyFrame& k);
 
 	// vector<glm::mat4> load_d() {
 	// 	vector<glm::mat4> d;
