@@ -2,6 +2,18 @@
 #include "bone_geometry.h"
 #include "config.h"
 
+void create_quad(std::vector<glm::vec4>& quad_vertices, std::vector<glm::uvec3>& quad_faces) {
+	quad_vertices.push_back(glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f));
+	quad_vertices.push_back(glm::vec4(1.0f, -1.0f, 0.0f, 1.0f));
+	quad_vertices.push_back(glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f));
+	quad_vertices.push_back(glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f));
+	quad_vertices.push_back(glm::vec4(1.0f, -1.0f, 0.0f, 1.0f));
+	quad_vertices.push_back(glm::vec4(1.0f,  1.0f, 0.0f, 1.0f));
+
+	quad_faces.push_back(glm::uvec3(0,1,2));
+	quad_faces.push_back(glm::uvec3(3,4,5));
+}
+
 void create_floor(std::vector<glm::vec4>& floor_vertices, std::vector<glm::uvec3>& floor_faces)
 {
 	floor_vertices.push_back(glm::vec4(kFloorXMin, kFloorY, kFloorZMax, 1.0f));

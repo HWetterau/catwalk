@@ -220,7 +220,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		mesh_->skeleton.keyframes.push_back(k);
 		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
 		cout << "keyframe list size " << mesh_->skeleton.keyframes.size() << endl;
-
+		save_texture_ = true;
 
 	} else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		//either play/pause animation

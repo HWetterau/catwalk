@@ -11,7 +11,9 @@ uniform vec4 specular;
 uniform float shininess;
 uniform float alpha;
 uniform sampler2D textureSampler;
+//layout(location = 0) out vec3 color;
 out vec4 fragment_color;
+
 
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);

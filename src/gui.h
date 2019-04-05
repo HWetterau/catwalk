@@ -54,6 +54,11 @@ public:
 	float getCurrentPlayTime() const;
 
 	AnimationState* getAnimationState() { return state; }
+	bool saveTexture() const { return save_texture_; }
+	void resetTexture() { save_texture_ = false; }
+
+	void addTexture(GLuint loc) { texture_locations.push_back(loc);}
+	vector<GLuint> getTextureLocs() const { return texture_locations;}
 
 private:
 	GLFWwindow* window_;
@@ -100,6 +105,8 @@ private:
 	AnimationState* state;
 	chrono::time_point<chrono::steady_clock> play_start;
 	float pause_time = 0;
+	bool save_texture_ = false;
+	vector<GLuint> texture_locations;
 };
 
 #endif

@@ -76,6 +76,16 @@ const char* axes_fragment_shader =
 #include "shaders/axes.frag"
 ;
 
+const char* quad_vertex_shader =
+#include "shaders/quad.vert"
+;
+
+const char* quad_fragment_shader =
+#include "shaders/quad.frag"
+;
+
+
+
 void ErrorCallback(int error, const char* description) {
 	std::cerr << "GLFW Error: " << description << "\n";
 }
@@ -121,6 +131,10 @@ int main(int argc, char* argv[])
 
 	LineMesh cylinder_mesh;
 	LineMesh axes_mesh;
+
+	std::vector<glm::vec4> quad_vertices;
+	std::vector<glm::uvec3> quad_faces;
+	create_quad(quad_vertices, quad_faces);
 
 	// FIXME: we already created meshes for cylinders. Use them to render
 	//        the cylinder and axes if required by the assignment.
@@ -242,6 +256,7 @@ int main(int argc, char* argv[])
 	object_pass_input.assign(7, "vert", mesh.vertices.data(), mesh.vertices.size(), 4, GL_FLOAT);
 	object_pass_input.assignIndex(mesh.faces.data(), mesh.faces.size(), 3);
 	object_pass_input.useMaterials(mesh.materials);
+	//cout << " OBJECT PASS" << endl;
 	RenderPass object_pass(-1,
 			object_pass_input,
 			{
@@ -306,6 +321,67 @@ int main(int argc, char* argv[])
 		);
 
 
+	GLuint quad_vertex_shader_id = 0;
+	CHECK_GL_ERROR(quad_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
+	CHECK_GL_ERROR(glShaderSource(quad_vertex_shader_id, 1, &quad_vertex_shader, nullptr));
+	glCompileShader(quad_vertex_shader_id);
+	CHECK_GL_SHADER_ERROR(quad_vertex_shader_id);
+
+	GLuint quad_fragment_shader_id = 0;
+	CHECK_GL_ERROR(quad_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER));
+	CHECK_GL_ERROR(glShaderSource(quad_fragment_shader_id, 1, &quad_fragment_shader, nullptr));
+	glCompileShader(quad_fragment_shader_id);
+	CHECK_GL_SHADER_ERROR(quad_fragment_shader_id);
+
+	GLuint g_buffer_objects[2]; 
+
+	GLuint quad_vao;
+	glGenVertexArrays(1, (GLuint*)&quad_vao);
+	CHECK_GL_ERROR(glBindVertexArray(quad_vao));
+	CHECK_GL_ERROR(glGenBuffers(2, &g_buffer_objects[0]));
+	
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[0]));
+	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
+				sizeof(float) * quad_vertices.size() * 4, quad_vertices.data(),
+				GL_STATIC_DRAW));
+	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
+	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_buffer_objects[1]));
+	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+				sizeof(uint32_t) * quad_faces.size() * 3,
+				quad_faces.data(), GL_STATIC_DRAW));
+
+	GLuint quad_program_id = 0;
+	GLint quad_texture_location = 0;
+
+	CHECK_GL_ERROR(quad_program_id = glCreateProgram());
+	CHECK_GL_ERROR(glAttachShader(quad_program_id, quad_vertex_shader_id));
+	CHECK_GL_ERROR(glAttachShader(quad_program_id, quad_fragment_shader_id));
+
+	CHECK_GL_ERROR(glBindAttribLocation(quad_program_id, 0, "vertex_position"));
+	CHECK_GL_ERROR(glBindFragDataLocation(quad_program_id, 0, "fragment_color"));
+
+	glLinkProgram(quad_program_id);
+	CHECK_GL_PROGRAM_ERROR(quad_program_id);
+
+	CHECK_GL_ERROR(quad_texture_location =
+		glGetUniformLocation(quad_program_id, "renderedTexture"));
+
+
+	// RenderDataInput quad_pass_input;
+	// quad_pass_input.assign(0, "vertex_position", quad_vertices.data(), quad_vertices.size(), 4, GL_FLOAT);
+	// quad_pass_input.assignIndex(quad_faces.data(), quad_faces.size(), 3);
+
+	// RenderPass quad_pass(-1, quad_pass_input,
+	// 	{ quad_vertex_shader, nullptr, quad_fragment_shader},
+	// 	{ std_model, std_view, std_proj},
+	// 	{ "fragment_color" }
+	// 	);
+
+
+
 	float aspect = 0.0f;
 	std::cout << "center = " << mesh.getCenter() << "\n";
 
@@ -357,6 +433,80 @@ int main(int argc, char* argv[])
 		}
 		// FIXME: update the preview textures here
 
+		if(gui.saveTexture()) {
+			GLuint FramebufferName = 0;
+			glGenFramebuffers(1, &FramebufferName);
+			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+			GLuint renderedTexture;
+			glGenTextures(1, &renderedTexture);
+			glBindTexture(GL_TEXTURE_2D, renderedTexture);
+			cout << "renderedTexture loc " << renderedTexture << endl;
+
+			gui.addTexture(renderedTexture);
+			
+			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+			glDrawBuffers(1, DrawBuffers);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+			glViewport(0,0,main_view_width,main_view_height);
+
+			int current_bone = gui.getCurrentBone();
+
+			// Draw bones first.
+			if (draw_skeleton && gui.isTransparent()) {
+				bone_pass.setup();
+				// Draw our lines.
+				// FIXME: you need setup skeleton.joints properly in
+				//        order to see the bones.
+				CHECK_GL_ERROR(glDrawElements(GL_LINES,
+											bone_indices.size() * 2,
+											GL_UNSIGNED_INT, 0));
+			}
+			draw_cylinder = (current_bone != -1 && gui.isTransparent());
+			if (draw_cylinder) {
+				cylinder_pass.setup();
+				CHECK_GL_ERROR(glDrawElements(GL_LINES,
+											cylinder_mesh.indices.size() * 2,
+											GL_UNSIGNED_INT, 0));
+				axes_pass.setup();
+				CHECK_GL_ERROR(glDrawElements(GL_LINES,
+											axes_mesh.indices.size() * 2,
+											GL_UNSIGNED_INT, 0));
+			}
+
+			// Then draw floor.
+			if (draw_floor) {
+				floor_pass.setup();
+				// Draw our triangles.
+				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES,
+											floor_faces.size() * 3,
+											GL_UNSIGNED_INT, 0));
+			}
+
+			// Draw the model
+			if (draw_object) {
+				object_pass.setup();
+				int mid = 0;
+				while (object_pass.renderWithMaterial(mid))
+					mid++;
+
+			}
+
+			glBindFramebuffer(GL_FRAMEBUFFER,0);
+			glClear(GL_COLOR_BUFFER_BIT);
+			gui.resetTexture();
+
+			
+		}
+
 		int current_bone = gui.getCurrentBone();
 
 		// Draw bones first.
@@ -402,6 +552,20 @@ int main(int argc, char* argv[])
 				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, mesh.faces.size() * 3, GL_UNSIGNED_INT, 0));
 #endif
 		}
+		glViewport(main_view_width, 0, preview_width, preview_height);
+		vector<GLuint> texture_locs = gui.getTextureLocs();
+		if (texture_locs.size() > 0) {
+			GLuint text0 = texture_locs.back();
+			
+			CHECK_GL_ERROR(glBindVertexArray(quad_vao));
+			CHECK_GL_ERROR(glUseProgram(quad_program_id));
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, text0);
+			CHECK_GL_ERROR(	glUniform1i(quad_texture_location, 0));
+			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
+
+		}
+		glViewport(0, 0, main_view_width, main_view_height);
 
 		if (gui.saveScreenshot()) {
 			unsigned char* pixels = new unsigned char[window_width * window_height * 3];
