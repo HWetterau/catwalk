@@ -449,6 +449,12 @@ int main(int argc, char* argv[])
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+			GLuint depthrenderbuffer;
+			glGenRenderbuffers(1, &depthrenderbuffer);
+			glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, main_view_width, main_view_height);
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
 			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
 			glDrawBuffers(1, DrawBuffers);
@@ -552,7 +558,7 @@ int main(int argc, char* argv[])
 				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, mesh.faces.size() * 3, GL_UNSIGNED_INT, 0));
 #endif
 		}
-		glViewport(main_view_width, 0, preview_width, preview_height);
+		glViewport(main_view_width, main_view_height - preview_height, preview_width, preview_height);
 		vector<GLuint> texture_locs = gui.getTextureLocs();
 		if (texture_locs.size() > 0) {
 			GLuint text0 = texture_locs.back();
