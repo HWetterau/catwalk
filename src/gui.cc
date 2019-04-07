@@ -407,6 +407,16 @@ void GUI::mouseButtonCallback(int button, int action, int mods)
 		return ;
 	}
 	// FIXME: Key Frame Selection
+	if(current_x_ <= window_width_ && current_y_ <= window_height_){
+		if(action == GLFW_PRESS){
+			selected_frame = floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset);
+			//cout<<"index "<<floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset)<<endl;
+		}
+		
+
+	}
+	
+
 }
 
 void GUI::mouseScrollCallback(double dx, double dy)
@@ -414,6 +424,13 @@ void GUI::mouseScrollCallback(double dx, double dy)
 	if (current_x_ < view_width_)
 		return;
 	// FIXME: Mouse Scrolling
+	//cout<<"dy "<<dy<<endl;
+	if(scroll_offset >= 0 && dy > 0)
+		return;
+	//limit downward scrolling
+	// if(scroll_offset <=  -(int) mesh_->skeleton.keyframes.size()   && dy < 0)
+	// 	return;
+	scroll_offset += 0.5 * dy;
 }
 
 void GUI::updateMatrices()

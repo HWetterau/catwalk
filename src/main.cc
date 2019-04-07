@@ -355,6 +355,8 @@ int main(int argc, char* argv[])
 
 	GLuint quad_program_id = 0;
 	GLint quad_texture_location = 0;
+	GLint quad_ortho_location = 0;
+	GLint quad_offset_location = 0;
 
 	CHECK_GL_ERROR(quad_program_id = glCreateProgram());
 	CHECK_GL_ERROR(glAttachShader(quad_program_id, quad_vertex_shader_id));
@@ -368,6 +370,11 @@ int main(int argc, char* argv[])
 
 	CHECK_GL_ERROR(quad_texture_location =
 		glGetUniformLocation(quad_program_id, "renderedTexture"));
+	CHECK_GL_ERROR(quad_ortho_location =
+		glGetUniformLocation(quad_program_id, "ortho"));
+	CHECK_GL_ERROR(quad_offset_location =
+		glGetUniformLocation(quad_program_id, "offset"));
+
 
 
 	// RenderDataInput quad_pass_input;
@@ -441,8 +448,7 @@ int main(int argc, char* argv[])
 			GLuint renderedTexture;
 			glGenTextures(1, &renderedTexture);
 			glBindTexture(GL_TEXTURE_2D, renderedTexture);
-			cout << "renderedTexture loc " << renderedTexture << endl;
-
+			
 			gui.addTexture(renderedTexture);
 			
 			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
@@ -558,17 +564,26 @@ int main(int argc, char* argv[])
 				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, mesh.faces.size() * 3, GL_UNSIGNED_INT, 0));
 #endif
 		}
-		glViewport(main_view_width, main_view_height - preview_height, preview_width, preview_height);
+		//glViewport(main_view_width, main_view_height - preview_height, preview_width, preview_height);
+		glViewport(main_view_width, 0, preview_width, main_view_height);
 		vector<GLuint> texture_locs = gui.getTextureLocs();
-		if (texture_locs.size() > 0) {
-			GLuint text0 = texture_locs.back();
-			
+		for (int quad = 0; quad <  texture_locs.size(); ++quad) {
+		//glViewport(main_view_width, main_view_height - (quad + 1) *preview_height, preview_width, preview_height);
+
+			GLuint text0 = texture_locs[quad];
+			glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
+			glm::vec2 offset = glm::vec2(0,-2*quad + 2 - gui.getScrollOffset());
+			//cout<<"offset "<<glm::to_string(offset)<<endl;
+			//draw a quad
 			CHECK_GL_ERROR(glBindVertexArray(quad_vao));
 			CHECK_GL_ERROR(glUseProgram(quad_program_id));
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, text0);
 			CHECK_GL_ERROR(	glUniform1i(quad_texture_location, 0));
+			CHECK_GL_ERROR(	glUniformMatrix4fv(quad_ortho_location, 1, GL_FALSE, &proj[0][0]));
+			CHECK_GL_ERROR(	glUniform2fv(quad_offset_location, 1, &offset[0]));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
+
 
 		}
 		glViewport(0, 0, main_view_width, main_view_height);

@@ -59,6 +59,9 @@ public:
 
 	void addTexture(GLuint loc) { texture_locations.push_back(loc);}
 	vector<GLuint> getTextureLocs() const { return texture_locations;}
+	double getScrollOffset() const {return scroll_offset;}
+	int getSelectedFrame() const {return selected_frame;}
+
 
 private:
 	GLFWwindow* window_;
@@ -107,6 +110,8 @@ private:
 	float pause_time = 0;
 	bool save_texture_ = false;
 	vector<GLuint> texture_locations;
+	double scroll_offset = 0;
+	int selected_frame = -1;
 };
 
 #endif
