@@ -458,7 +458,108 @@ int main(int argc, char* argv[])
 	
 	if (argc >= 3) {
 		mesh.loadAnimationFrom(argv[2]);
+		gui.getAnimationState()->end_keyframe = mesh.skeleton.keyframes.size()-1;
+
+		//load textures
+		glfwGetFramebufferSize(window, &window_width, &window_height);
+		glViewport(0, 0, main_view_width, main_view_height);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_BLEND);
+		glEnable(GL_CULL_FACE);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glDepthFunc(GL_LESS);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glCullFace(GL_BACK);
+
+		gui.updateMatrices();
+		mats = gui.getMatrixPointers();
+
+		for(int k = 0; k < mesh.skeleton.keyframes.size(); ++k) {
+			mesh.changeSkeleton(mesh.skeleton.keyframes[k]);
+			mesh.updateAnimation();
+
+			GLuint FramebufferName = 0;
+			glGenFramebuffers(1, &FramebufferName);
+			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+			GLuint renderedTexture;
+			glGenTextures(1, &renderedTexture);
+			glBindTexture(GL_TEXTURE_2D, renderedTexture);
+			
+			gui.addTexture(renderedTexture);
+			
+			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+			GLuint depthrenderbuffer;
+			glGenRenderbuffers(1, &depthrenderbuffer);
+			glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, main_view_width, main_view_height);
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+			glDrawBuffers(1, DrawBuffers);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+			glViewport(0,0,main_view_width,main_view_height);
+
+			int current_bone = gui.getCurrentBone();
+
+			// Draw bones first.
+			if (draw_skeleton && gui.isTransparent()) {
+				bone_pass.setup();
+				// Draw our lines.
+				// FIXME: you need setup skeleton.joints properly in
+				//        order to see the bones.
+				CHECK_GL_ERROR(glDrawElements(GL_LINES,
+											bone_indices.size() * 2,
+											GL_UNSIGNED_INT, 0));
+			}
+			draw_cylinder = (current_bone != -1 && gui.isTransparent());
+			if (draw_cylinder) {
+				cylinder_pass.setup();
+				CHECK_GL_ERROR(glDrawElements(GL_LINES,
+											cylinder_mesh.indices.size() * 2,
+											GL_UNSIGNED_INT, 0));
+				axes_pass.setup();
+				CHECK_GL_ERROR(glDrawElements(GL_LINES,
+											axes_mesh.indices.size() * 2,
+											GL_UNSIGNED_INT, 0));
+			}
+
+			// Then draw floor.
+			if (draw_floor) {
+				floor_pass.setup();
+				// Draw our triangles.
+				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES,
+											floor_faces.size() * 3,
+											GL_UNSIGNED_INT, 0));
+			}
+
+			// Draw the model
+			if (draw_object) {
+				object_pass.setup();
+				int mid = 0;
+				while (object_pass.renderWithMaterial(mid))
+					mid++;
+
+			}
+
+			glBindFramebuffer(GL_FRAMEBUFFER,0);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}	
+		if(mesh.skeleton.keyframes.size() > 0){
+			mesh.changeSkeleton(mesh.skeleton.keyframes[0]);
+			mesh.updateAnimation();
+		}
 	}
+
 
 	while (!glfwWindowShouldClose(window)) {
 		// Setup some basic window stuff.
