@@ -57,10 +57,20 @@ public:
 	bool saveTexture() const { return save_texture_; }
 	void resetTexture() { save_texture_ = false; }
 
-	void addTexture(GLuint loc) { texture_locations.push_back(loc);}
+	void addTexture(GLuint loc) { 
+		if (replace_texture != -1){
+			texture_locations[replace_texture] = loc;
+		} else {
+			texture_locations.push_back(loc);
+		}
+	}
 	vector<GLuint> getTextureLocs() const { return texture_locations;}
 	double getScrollOffset() const {return scroll_offset;}
 	int getSelectedFrame() const {return selected_frame;}
+	int getNumKeyframes() const { return mesh_->skeleton.keyframes.size(); }
+
+	int replaceTexture() const { return replace_texture; }
+	void resetReplaceTexture() { replace_texture = -1; }
 
 
 private:
@@ -112,6 +122,7 @@ private:
 	vector<GLuint> texture_locations;
 	double scroll_offset = 0;
 	int selected_frame = -1;
+	int replace_texture = -1;
 };
 
 #endif

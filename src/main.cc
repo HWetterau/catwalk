@@ -84,6 +84,14 @@ const char* quad_fragment_shader =
 #include "shaders/quad.frag"
 ;
 
+const char* select_vertex_shader =
+#include "shaders/select.vert"
+;
+
+const char* select_fragment_shader =
+#include "shaders/select.frag"
+;
+
 
 
 void ErrorCallback(int error, const char* description) {
@@ -135,6 +143,10 @@ int main(int argc, char* argv[])
 	std::vector<glm::vec4> quad_vertices;
 	std::vector<glm::uvec3> quad_faces;
 	create_quad(quad_vertices, quad_faces);
+
+	std::vector<glm::vec4> select_vertices;
+	std::vector<glm::uvec3> select_indices;
+	create_select(select_vertices, select_indices);
 
 	// FIXME: we already created meshes for cylinders. Use them to render
 	//        the cylinder and axes if required by the assignment.
@@ -320,7 +332,7 @@ int main(int argc, char* argv[])
 		{ "fragment_color" }
 		);
 
-
+	//QUAD SETUP
 	GLuint quad_vertex_shader_id = 0;
 	CHECK_GL_ERROR(quad_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
 	CHECK_GL_ERROR(glShaderSource(quad_vertex_shader_id, 1, &quad_vertex_shader, nullptr));
@@ -375,17 +387,63 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(quad_offset_location =
 		glGetUniformLocation(quad_program_id, "offset"));
 
+	//SELECT SETUP
+	GLuint select_vertex_shader_id = 0;
+	CHECK_GL_ERROR(select_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
+	CHECK_GL_ERROR(glShaderSource(select_vertex_shader_id, 1, &select_vertex_shader, nullptr));
+	glCompileShader(select_vertex_shader_id);
+	CHECK_GL_SHADER_ERROR(select_vertex_shader_id);
 
+	GLuint select_fragment_shader_id = 0;
+	CHECK_GL_ERROR(select_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER));
+	CHECK_GL_ERROR(glShaderSource(select_fragment_shader_id, 1, &select_fragment_shader, nullptr));
+	glCompileShader(select_fragment_shader_id);
+	CHECK_GL_SHADER_ERROR(select_fragment_shader_id);
 
-	// RenderDataInput quad_pass_input;
-	// quad_pass_input.assign(0, "vertex_position", quad_vertices.data(), quad_vertices.size(), 4, GL_FLOAT);
-	// quad_pass_input.assignIndex(quad_faces.data(), quad_faces.size(), 3);
+	GLuint select_buffer_objects[2]; 
 
-	// RenderPass quad_pass(-1, quad_pass_input,
-	// 	{ quad_vertex_shader, nullptr, quad_fragment_shader},
-	// 	{ std_model, std_view, std_proj},
-	// 	{ "fragment_color" }
-	// 	);
+	GLuint select_vao;
+	glGenVertexArrays(1, (GLuint*)&select_vao);
+	CHECK_GL_ERROR(glBindVertexArray(select_vao));
+	CHECK_GL_ERROR(glGenBuffers(2, &select_buffer_objects[0]));
+	
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, select_buffer_objects[0]));
+	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
+				sizeof(float) * select_vertices.size() * 4, select_vertices.data(),
+				GL_STATIC_DRAW));
+
+	
+
+	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
+	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
+
+	//do we need faces? yes
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, select_buffer_objects[1]));
+	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+				sizeof(uint32_t) * select_indices.size() * 3,
+				select_indices.data(), GL_STATIC_DRAW));
+
+	GLuint select_program_id = 0;
+	
+	GLint select_ortho_location = 0;
+	GLint select_offset_location = 0;
+
+	CHECK_GL_ERROR(select_program_id = glCreateProgram());
+	CHECK_GL_ERROR(glAttachShader(select_program_id, select_vertex_shader_id));
+	CHECK_GL_ERROR(glAttachShader(select_program_id, select_fragment_shader_id));
+
+	CHECK_GL_ERROR(glBindAttribLocation(select_program_id, 0, "vertex_position"));
+	CHECK_GL_ERROR(glBindFragDataLocation(select_program_id, 0, "fragment_color"));
+
+	glLinkProgram(select_program_id);
+	CHECK_GL_PROGRAM_ERROR(select_program_id);
+
+	CHECK_GL_ERROR(select_ortho_location =
+		glGetUniformLocation(select_program_id, "ortho"));
+	CHECK_GL_ERROR(select_offset_location =
+		glGetUniformLocation(select_program_id, "offset"));
 
 
 
@@ -567,11 +625,11 @@ int main(int argc, char* argv[])
 		//glViewport(main_view_width, main_view_height - preview_height, preview_width, preview_height);
 		glViewport(main_view_width, 0, preview_width, main_view_height);
 		vector<GLuint> texture_locs = gui.getTextureLocs();
+		glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
 		for (int quad = 0; quad <  texture_locs.size(); ++quad) {
 		//glViewport(main_view_width, main_view_height - (quad + 1) *preview_height, preview_width, preview_height);
 
 			GLuint text0 = texture_locs[quad];
-			glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
 			glm::vec2 offset = glm::vec2(0,-2*quad + 2 - gui.getScrollOffset());
 			//cout<<"offset "<<glm::to_string(offset)<<endl;
 			//draw a quad
@@ -585,6 +643,16 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
 
+		}
+		int frameIndex = gui.getSelectedFrame();
+		if (frameIndex >= 0 && frameIndex < gui.getNumKeyframes()){
+			glm::vec2 offset = glm::vec2(0,-2*frameIndex + 2 - gui.getScrollOffset());
+			CHECK_GL_ERROR(glBindVertexArray(select_vao));
+			CHECK_GL_ERROR(glUseProgram(select_program_id));
+			CHECK_GL_ERROR(	glUniformMatrix4fv(select_ortho_location, 1, GL_FALSE, &proj[0][0]));
+			CHECK_GL_ERROR(	glUniform2fv(select_offset_location, 1, &offset[0]));
+			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, select_indices.size() * 3, GL_UNSIGNED_INT, 0));
+	
 		}
 		glViewport(0, 0, main_view_width, main_view_height);
 

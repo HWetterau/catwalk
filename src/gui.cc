@@ -219,7 +219,6 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		}
 		mesh_->skeleton.keyframes.push_back(k);
 		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
-		cout << "keyframe list size " << mesh_->skeleton.keyframes.size() << endl;
 		save_texture_ = true;
 
 	} else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
@@ -241,6 +240,48 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		pause_time = 0;
 		play_start = chrono::steady_clock::now();
 
+	} else if (key == GLFW_KEY_PAGE_UP && action == GLFW_RELEASE) {
+		if( selected_frame > 0) {
+			selected_frame--;
+		}
+	} else if (key == GLFW_KEY_PAGE_DOWN && action == GLFW_RELEASE) {
+		if (selected_frame != -1 && selected_frame < getNumKeyframes() -1){
+			selected_frame++;
+		}
+	} else if (key == GLFW_KEY_U && action == GLFW_RELEASE) {
+		//update
+		if(selected_frame != -1 && selected_frame < getNumKeyframes()) {
+			KeyFrame k;
+			for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
+				k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
+			}
+			mesh_->skeleton.keyframes[selected_frame] = k;
+			replace_texture = selected_frame;
+			save_texture_ = true;
+		}
+
+	} else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
+		//reset skeleton
+		if(selected_frame >= getNumKeyframes()){
+			selected_frame = -1;
+		}
+		if(selected_frame != -1){
+			mesh_->changeSkeleton(mesh_->skeleton.keyframes[selected_frame]);
+			pose_changed_ = true;
+		}
+	} else if (key == GLFW_KEY_DELETE && action == GLFW_RELEASE) {
+		//delete keyframe
+		if(selected_frame != -1 && selected_frame < getNumKeyframes()) {
+			mesh_->skeleton.keyframes.erase(mesh_->skeleton.keyframes.begin() + selected_frame);
+			texture_locations.erase(texture_locations.begin() + selected_frame);
+			state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
+			if(state->next_keyframe > state->end_keyframe) {
+				state->current_keyframe = state->end_keyframe;
+				state->next_keyframe = state->end_keyframe;
+			}
+
+		}
+		selected_frame = -1;
 	}
 
 	// FIXME: implement other controls here.
@@ -409,7 +450,11 @@ void GUI::mouseButtonCallback(int button, int action, int mods)
 	// FIXME: Key Frame Selection
 	if(current_x_ <= window_width_ && current_y_ <= window_height_){
 		if(action == GLFW_PRESS){
-			selected_frame = floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset);
+			int temp = floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset);
+			if (temp < getNumKeyframes()) {
+				selected_frame = temp;
+			}
+			
 			//cout<<"index "<<floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset)<<endl;
 		}
 		

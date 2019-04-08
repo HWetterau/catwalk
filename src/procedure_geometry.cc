@@ -3,15 +3,62 @@
 #include "config.h"
 
 void create_quad(std::vector<glm::vec4>& quad_vertices, std::vector<glm::uvec3>& quad_faces) {
-	quad_vertices.push_back(glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f));
-	quad_vertices.push_back(glm::vec4(1.0f, -1.0f, 0.0f, 1.0f));
-	quad_vertices.push_back(glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f));
-	quad_vertices.push_back(glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f));
-	quad_vertices.push_back(glm::vec4(1.0f, -1.0f, 0.0f, 1.0f));
-	quad_vertices.push_back(glm::vec4(1.0f,  1.0f, 0.0f, 1.0f));
+	quad_vertices.push_back(glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f));//c
+	quad_vertices.push_back(glm::vec4(1.0f, -1.0f, 0.0f, 1.0f)); //d
+	quad_vertices.push_back(glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f)); //a
+	quad_vertices.push_back(glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f)); //a
+	quad_vertices.push_back(glm::vec4(1.0f, -1.0f, 0.0f, 1.0f)); //d
+	quad_vertices.push_back(glm::vec4(1.0f,  1.0f, 0.0f, 1.0f)); //b
 
 	quad_faces.push_back(glm::uvec3(0,1,2));
 	quad_faces.push_back(glm::uvec3(3,4,5));
+}
+
+void create_select(std::vector<glm::vec4>& select_vertices, std::vector<glm::uvec3>& select_indices){
+	//top
+	select_vertices.push_back(glm::vec4(-1.0f, 0.867f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, 0.867f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-1.0f,  1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-1.0f,  1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, 0.867f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f,  1.0f, -0.5f, 1.0f));
+
+	select_indices.push_back(glm::uvec3(0,1,2));
+	select_indices.push_back(glm::uvec3(3,4,5));
+
+	//left
+	select_vertices.push_back(glm::vec4(-1.0f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-0.9f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-1.0f,  1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-1.0f,  1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-0.9f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-0.9f,  1.0f, -0.5f, 1.0f));
+
+	select_indices.push_back(glm::uvec3(6,7,8));
+	select_indices.push_back(glm::uvec3(9,10,11));
+
+	//boottom
+	select_vertices.push_back(glm::vec4(-1.0f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-1.0f,  -0.867f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(-1.0f,  -0.867f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, -0.867f, -0.5f, 1.0f));
+
+	select_indices.push_back(glm::uvec3(12,13,14));
+	select_indices.push_back(glm::uvec3(15,16,17));
+
+	//right
+	select_vertices.push_back(glm::vec4(0.9f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(0.9f,  1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(0.9f,  1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, -1.0f, -0.5f, 1.0f));
+	select_vertices.push_back(glm::vec4(1.0f, 1.0f, -0.5f, 1.0f));
+
+	select_indices.push_back(glm::uvec3(18,19,20));
+	select_indices.push_back(glm::uvec3(21,22,23));
+
 }
 
 void create_floor(std::vector<glm::vec4>& floor_vertices, std::vector<glm::uvec3>& floor_faces)
