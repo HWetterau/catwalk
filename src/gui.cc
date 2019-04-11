@@ -217,7 +217,12 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
 			k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
 		}
-		mesh_->skeleton.keyframes.push_back(k);
+		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
+			//insert before
+			mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + selected_frame, k);
+		} else {
+			mesh_->skeleton.keyframes.push_back(k);
+		}
 		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
 		save_texture_ = true;
 
@@ -282,6 +287,9 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 
 		}
 		selected_frame = -1;
+	} else if (key == GLFW_KEY_I && action == GLFW_RELEASE) {
+		//toggle cursor
+		cursor = !cursor;
 	}
 
 	// FIXME: implement other controls here.

@@ -60,7 +60,11 @@ public:
 	void addTexture(GLuint loc) { 
 		if (replace_texture != -1){
 			texture_locations[replace_texture] = loc;
-		} else {
+
+		} else if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()){
+		
+			texture_locations.insert(texture_locations.begin() + selected_frame, loc);
+		}else {
 			texture_locations.push_back(loc);
 		}
 	}
@@ -71,6 +75,7 @@ public:
 
 	int replaceTexture() const { return replace_texture; }
 	void resetReplaceTexture() { replace_texture = -1; }
+	bool getCursor() const {return cursor;}
 
 
 private:
@@ -123,6 +128,7 @@ private:
 	double scroll_offset = 0;
 	int selected_frame = -1;
 	int replace_texture = -1;
+	bool cursor = false;
 };
 
 #endif

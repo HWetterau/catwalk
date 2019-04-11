@@ -1,14 +1,15 @@
-This should work as long as GLFW3 and GLEW are installed.  It uses GLSL 3.3, core 330 due to limitations
-on OS X.  This does not currently compile on the departmental machines, because GLFW3 and GLEW are not
-installed
+Ann Yue
+Hannah Wetterau
 
-To build and run:
+Extra Credit:
 
-~~~~
-mkdir build
-cd build
-cmake ..
-make
-cd ..
-build/bin/bunny
-~~~~
+Creative scene
+from the build folder run
+./bin/skinning ../assets/pmd/KAITO.pmd ../macarena.json
+
+Cursor
+press i to toggle on/off the cursor
+the selected frame will be blue and new keyframes 
+will be inserted before the selected frame
+
+

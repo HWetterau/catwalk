@@ -429,6 +429,7 @@ int main(int argc, char* argv[])
 	
 	GLint select_ortho_location = 0;
 	GLint select_offset_location = 0;
+	GLint select_cursor_location = 0;
 
 	CHECK_GL_ERROR(select_program_id = glCreateProgram());
 	CHECK_GL_ERROR(glAttachShader(select_program_id, select_vertex_shader_id));
@@ -444,6 +445,8 @@ int main(int argc, char* argv[])
 		glGetUniformLocation(select_program_id, "ortho"));
 	CHECK_GL_ERROR(select_offset_location =
 		glGetUniformLocation(select_program_id, "offset"));
+	CHECK_GL_ERROR(select_cursor_location =
+		glGetUniformLocation(select_program_id, "cursor"));
 
 
 
@@ -752,6 +755,7 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(glUseProgram(select_program_id));
 			CHECK_GL_ERROR(	glUniformMatrix4fv(select_ortho_location, 1, GL_FALSE, &proj[0][0]));
 			CHECK_GL_ERROR(	glUniform2fv(select_offset_location, 1, &offset[0]));
+			CHECK_GL_ERROR(	glUniform1i(select_cursor_location, gui.getCursor() ));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, select_indices.size() * 3, GL_UNSIGNED_INT, 0));
 	
 		}
