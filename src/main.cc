@@ -31,6 +31,15 @@ int preview_bar_width = preview_width;
 int preview_bar_height = main_view_height;
 const std::string window_title = "Animation";
 
+// VBO and VAO descriptors.
+enum { kVertexBuffer, kIndexBuffer, kNumVbos };
+
+// These are our VAOs.
+enum { kQuadVao,kSelectVao, kLightVao, kNumVaos };
+
+GLuint g_array_objects[kNumVaos];  // This will store the VAO descriptors.
+GLuint g_buffer_objects[kNumVaos][kNumVbos];  // These will store VBO descriptors.
+
 const char* vertex_shader =
 #include "shaders/default.vert"
 ;
@@ -93,6 +102,14 @@ const char* select_fragment_shader =
 ;
 
 
+const char* light_vertex_shader =
+#include "shaders/light.vert"
+;
+
+const char* light_fragment_shader =
+#include "shaders/light.frag"
+;
+
 
 void ErrorCallback(int error, const char* description) {
 	std::cerr << "GLFW Error: " << description << "\n";
@@ -123,6 +140,50 @@ GLFWwindow* init_glefw()
 	return ret;
 }
 
+//adapted from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
+bool LoadObj2(const char* filename, vector<glm::vec4>& vertices, vector<glm::uvec3>& faces) {
+
+	vector< unsigned int > vertexIndices;
+	vector< glm::vec4 > temp_vertices;
+
+
+	FILE * file = fopen(filename, "r");
+	if( file == NULL ){
+	    printf("Can't open the file !\n");
+	    return false;
+	}
+
+	while( 1 ){
+
+    char lineHeader[128];
+    // read the first word of the line
+    int res = fscanf(file, "%s", lineHeader);
+    if (res == EOF)
+        break; // EOF = End Of File. Quit the loop.
+
+		if ( strcmp( lineHeader, "v" ) == 0 ){
+			glm::vec3 vertex;
+			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
+			vertices.push_back(glm::vec4(vertex, 1));
+		}else if ( strcmp( lineHeader, "f" ) == 0 ){
+			std::string vertex1, vertex2, vertex3;
+			unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+			int matches = fscanf(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
+			if (matches != 3){
+				printf("File can't be read: Try exporting with other options\n");
+				return false;
+			}
+			faces.push_back(glm::uvec3(vertexIndex[0]-1, vertexIndex[1]-1, vertexIndex[2]-1));
+			vertexIndices.push_back(vertexIndex[0]);
+			vertexIndices.push_back(vertexIndex[1]);
+			vertexIndices.push_back(vertexIndex[2]);
+		}
+
+	}
+	return true;
+}
+
+
 int main(int argc, char* argv[])
 {
 	if (argc < 2) {
@@ -148,6 +209,10 @@ int main(int argc, char* argv[])
 	std::vector<glm::uvec3> select_indices;
 	create_select(select_vertices, select_indices);
 
+	std::vector<glm::vec4> light_vertices;
+	std::vector<glm::uvec3> light_faces;
+	LoadObj2("../assets/sphere.obj", light_vertices, light_faces);
+
 	// FIXME: we already created meshes for cylinders. Use them to render
 	//        the cylinder and axes if required by the assignment.
 	create_cylinder_mesh(cylinder_mesh);
@@ -169,7 +234,7 @@ int main(int argc, char* argv[])
 	 */
 	gui.assignMesh(&mesh);
 
-	glm::vec4 light_position = glm::vec4(0.0f, 100.0f, 0.0f, 1.0f);
+	glm::vec4 light_position = glm::vec4(0.0f, 50.0f, 0.0f, 1.0f);
 	MatrixPointers mats; // Define MatrixPointers here for lambda to capture
 
 	/*
@@ -331,7 +396,7 @@ int main(int argc, char* argv[])
 		{ std_model, std_view, std_proj, bone_trans},
 		{ "fragment_color" }
 		);
-
+	
 	//QUAD SETUP
 	GLuint quad_vertex_shader_id = 0;
 	CHECK_GL_ERROR(quad_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
@@ -344,15 +409,14 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glShaderSource(quad_fragment_shader_id, 1, &quad_fragment_shader, nullptr));
 	glCompileShader(quad_fragment_shader_id);
 	CHECK_GL_SHADER_ERROR(quad_fragment_shader_id);
+	//generate vaos!!!
+	CHECK_GL_ERROR(glGenVertexArrays(kNumVaos, &g_array_objects[0]));
+	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kQuadVao]));
 
-	GLuint g_buffer_objects[2]; 
-
-	GLuint quad_vao;
-	glGenVertexArrays(1, (GLuint*)&quad_vao);
-	CHECK_GL_ERROR(glBindVertexArray(quad_vao));
-	CHECK_GL_ERROR(glGenBuffers(2, &g_buffer_objects[0]));
 	
-	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[0]));
+	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kQuadVao][0]));
+	
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kQuadVao][kVertexBuffer]));
 	// NOTE: We do not send anything right now, we just describe it to OpenGL.
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * quad_vertices.size() * 4, quad_vertices.data(),
@@ -360,7 +424,7 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
 	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
 
-	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_buffer_objects[1]));
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,g_buffer_objects[kQuadVao][kIndexBuffer]));
 	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
 				sizeof(uint32_t) * quad_faces.size() * 3,
 				quad_faces.data(), GL_STATIC_DRAW));
@@ -400,27 +464,21 @@ int main(int argc, char* argv[])
 	glCompileShader(select_fragment_shader_id);
 	CHECK_GL_SHADER_ERROR(select_fragment_shader_id);
 
-	GLuint select_buffer_objects[2]; 
+	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kSelectVao]));
+	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kSelectVao][0]));
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kSelectVao][kVertexBuffer]));
 
-	GLuint select_vao;
-	glGenVertexArrays(1, (GLuint*)&select_vao);
-	CHECK_GL_ERROR(glBindVertexArray(select_vao));
-	CHECK_GL_ERROR(glGenBuffers(2, &select_buffer_objects[0]));
-	
-	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, select_buffer_objects[0]));
 	// NOTE: We do not send anything right now, we just describe it to OpenGL.
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * select_vertices.size() * 4, select_vertices.data(),
 				GL_STATIC_DRAW));
-
-	
 
 	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
 	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
 
 	//do we need faces? yes
 
-	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, select_buffer_objects[1]));
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,g_buffer_objects[kSelectVao][kIndexBuffer]));
 	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
 				sizeof(uint32_t) * select_indices.size() * 3,
 				select_indices.data(), GL_STATIC_DRAW));
@@ -447,6 +505,64 @@ int main(int argc, char* argv[])
 		glGetUniformLocation(select_program_id, "offset"));
 	CHECK_GL_ERROR(select_cursor_location =
 		glGetUniformLocation(select_program_id, "cursor"));
+
+	//LIGHT SETUP
+
+	GLuint light_vertex_shader_id = 0;
+	CHECK_GL_ERROR(light_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
+	CHECK_GL_ERROR(glShaderSource(light_vertex_shader_id, 1, &light_vertex_shader, nullptr));
+	glCompileShader(light_vertex_shader_id);
+	CHECK_GL_SHADER_ERROR(light_vertex_shader_id);
+
+	GLuint light_fragment_shader_id = 0;
+	CHECK_GL_ERROR(light_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER));
+	CHECK_GL_ERROR(glShaderSource(light_fragment_shader_id, 1, &light_fragment_shader, nullptr));
+	glCompileShader(light_fragment_shader_id);
+	CHECK_GL_SHADER_ERROR(light_fragment_shader_id);
+
+	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kLightVao]));
+	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kLightVao][0]));
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kLightVao][kVertexBuffer]));
+
+	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
+				sizeof(float) * light_vertices.size() * 4, light_vertices.data(),
+				GL_STATIC_DRAW));
+
+	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
+	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
+
+	//do we need faces? yes
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,g_buffer_objects[kLightVao][kIndexBuffer]));
+	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+				sizeof(uint32_t) * light_faces.size() * 3,
+				light_faces.data(), GL_STATIC_DRAW));
+
+	GLuint light_program_id = 0;
+	
+	GLint light_projection_location = 0;
+	GLint light_view_location = 0;
+	GLint light_offset_location = 0;
+
+
+	CHECK_GL_ERROR(light_program_id = glCreateProgram());
+	CHECK_GL_ERROR(glAttachShader(light_program_id, light_vertex_shader_id));
+	CHECK_GL_ERROR(glAttachShader(light_program_id, light_fragment_shader_id));
+
+	CHECK_GL_ERROR(glBindAttribLocation(light_program_id, 0, "vertex_position"));
+	CHECK_GL_ERROR(glBindFragDataLocation(light_program_id, 0, "fragment_color"));
+
+	glLinkProgram(light_program_id);
+	CHECK_GL_PROGRAM_ERROR(light_program_id);
+
+	CHECK_GL_ERROR(light_projection_location =
+		glGetUniformLocation(light_program_id, "projection"));
+	CHECK_GL_ERROR(light_view_location =
+		glGetUniformLocation(light_program_id, "view"));
+	CHECK_GL_ERROR(light_offset_location =
+		glGetUniformLocation(light_program_id, "offset"));
+
 
 
 
@@ -523,6 +639,7 @@ int main(int argc, char* argv[])
 				CHECK_GL_ERROR(glDrawElements(GL_LINES,
 											bone_indices.size() * 2,
 											GL_UNSIGNED_INT, 0));
+			
 			}
 			draw_cylinder = (current_bone != -1 && gui.isTransparent());
 			if (draw_cylinder) {
@@ -683,6 +800,8 @@ int main(int argc, char* argv[])
 
 		int current_bone = gui.getCurrentBone();
 
+
+	
 		// Draw bones first.
 		if (draw_skeleton && gui.isTransparent()) {
 			bone_pass.setup();
@@ -692,6 +811,17 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(glDrawElements(GL_LINES,
 			                              bone_indices.size() * 2,
 			                              GL_UNSIGNED_INT, 0));
+			//draw the light!
+			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kLightVao]));
+			CHECK_GL_ERROR(glUseProgram(light_program_id));
+
+			glm::mat4 projection = gui.getProjection();
+			glm::mat4 view = gui.getView();
+			CHECK_GL_ERROR(	glUniformMatrix4fv(light_projection_location, 1, GL_FALSE, &projection[0][0]));
+			CHECK_GL_ERROR(	glUniformMatrix4fv(light_view_location, 1, GL_FALSE, &view[0][0]));
+			CHECK_GL_ERROR(	glUniform4fv(light_offset_location, 1, &light_position[0]));
+			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, light_faces.size() * 3, GL_UNSIGNED_INT, 0));
+
 		}
 		draw_cylinder = (current_bone != -1 && gui.isTransparent());
 		if (draw_cylinder) {
@@ -714,7 +844,7 @@ int main(int argc, char* argv[])
 			                              GL_UNSIGNED_INT, 0));
 		}
 
-		// Draw the model
+		//Draw the model
 		if (draw_object) {
 			object_pass.setup();
 			int mid = 0;
@@ -737,7 +867,7 @@ int main(int argc, char* argv[])
 			glm::vec2 offset = glm::vec2(0,-2*quad + 2 - gui.getScrollOffset());
 			//cout<<"offset "<<glm::to_string(offset)<<endl;
 			//draw a quad
-			CHECK_GL_ERROR(glBindVertexArray(quad_vao));
+			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kQuadVao]));
 			CHECK_GL_ERROR(glUseProgram(quad_program_id));
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, text0);
@@ -751,7 +881,7 @@ int main(int argc, char* argv[])
 		int frameIndex = gui.getSelectedFrame();
 		if (frameIndex >= 0 && frameIndex < gui.getNumKeyframes()){
 			glm::vec2 offset = glm::vec2(0,-2*frameIndex + 2 - gui.getScrollOffset());
-			CHECK_GL_ERROR(glBindVertexArray(select_vao));
+			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kSelectVao]));
 			CHECK_GL_ERROR(glUseProgram(select_program_id));
 			CHECK_GL_ERROR(	glUniformMatrix4fv(select_ortho_location, 1, GL_FALSE, &proj[0][0]));
 			CHECK_GL_ERROR(	glUniform2fv(select_offset_location, 1, &offset[0]));

@@ -77,6 +77,9 @@ public:
 	void resetReplaceTexture() { replace_texture = -1; }
 	bool getCursor() const {return cursor;}
 
+	glm::mat4 getProjection() const { return projection_matrix_; }
+	glm::mat4 getView() const { return view_matrix_; }
+
 
 private:
 	GLFWwindow* window_;
