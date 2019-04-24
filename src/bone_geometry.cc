@@ -77,7 +77,7 @@ void Mesh::loadPmd(const std::string& fn)
 
 	vector<SparseTuple> weights;
 	mr.getJointWeights(weights);
-	for (int i = 0; i < weights.size(); ++i) {
+	for (int i = 0; i < (int)weights.size(); ++i) {
 		SparseTuple current = weights[i];
 		joint0.push_back(current.jid0);
 		joint1.push_back(current.jid1);
@@ -110,31 +110,38 @@ void Mesh::computeBounds()
 	}
 }
 
-void Mesh::updateAnimation(float t, AnimationState* a)
+void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 {	// FIXME: Support Animation Here
 	if (t != -1) {
 		a->current_time = t;
 		float fps = 2.0;
-		//cout << "curr - old " << a->current_time - a->old_time  << endl;
+		bool interpolate = true;
+
 		if (a->current_time - a->old_time > (1/fps)) {
 			a->old_time = a->current_time;
-			// cout << "current keyframe " << (int)a->current_keyframe << endl;
-			// cout << "next keyframe " << (int)a->next_keyframe << endl;
+	
  			if (a->next_keyframe < a->end_keyframe) {
 				a->current_keyframe = a->next_keyframe;
 				a->next_keyframe++;
-
-				// cout <<"new current keyframe " << (int)a->current_keyframe << endl;
-				// cout << "new next keyframe " << (int)a->next_keyframe << endl;
+				interpolate = true;
+	
 			} else {
 				a->current_keyframe = a->next_keyframe;
+				interpolate = false;
 			}
 
 		}
 		float interp = fps * (a->current_time - a->old_time);
 		KeyFrame result;
- 		KeyFrame::interpolate(skeleton.keyframes[a->current_keyframe], skeleton.keyframes[a->next_keyframe], interp, result);
+		if (interpolate){
+ 			KeyFrame::interpolate(skeleton.keyframes[a->current_keyframe], skeleton.keyframes[a->next_keyframe], interp, result);
+		} else {
+			result = skeleton.keyframes[a->current_keyframe];
+		}
 		changeSkeleton(result);
+		lc.light_pos = result.light_pos;
+		lc.camera_pos = result.camera_pos;
+		lc.camera_rot = result.camera_rot;
 	}
 
 	skeleton.refreshCache(&currentQ_);

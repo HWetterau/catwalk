@@ -4,10 +4,9 @@
 #include <iostream>
 #include <algorithm>
 #include <debuggl.h>
-#include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/transform.hpp>
+
 
 #include <glm/gtx/string_cast.hpp>
 
@@ -217,6 +216,10 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
 			k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
 		}
+		k.light_pos = light_position_;
+		k.camera_pos = eye_;
+		k.camera_rot = glm::quat_cast(rel_rot);
+
 		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
 			//insert before
 			mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + selected_frame, k);
@@ -234,6 +237,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			pause_time = getCurrentPlayTime();
 		}
 		play_start = chrono::steady_clock::now();
+
 		state->old_time = 0;
 
 	} else if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
@@ -260,6 +264,9 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
 				k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
 			}
+			k.light_pos = light_position_;
+			k.camera_pos = eye_;
+			k.camera_rot = glm::quat_cast(rel_rot);
 			mesh_->skeleton.keyframes[selected_frame] = k;
 			replace_texture = selected_frame;
 			save_texture_ = true;
@@ -345,8 +352,10 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 				orientation_ *
 				glm::vec3(mouse_direction.y, -mouse_direction.x, 0.0f)
 				);
+		glm::mat4 rot =	glm::rotate(rotation_speed_, axis);	
+		rel_rot = rot * rel_rot;  //questionable order
 		orientation_ =
-			glm::mat3(glm::rotate(rotation_speed_, axis) * glm::mat4(orientation_));
+			glm::mat3(rot * glm::mat4(orientation_));
 		tangent_ = glm::column(orientation_, 0);
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
@@ -495,7 +504,7 @@ void GUI::updateMatrices()
 		eye_ = center_ - camera_distance_ * look_;
 
 	view_matrix_ = glm::lookAt(eye_, center_, up_);
-	light_position_ = glm::vec4(eye_, 1.0f);
+	//light_position_ = glm::vec4(eye_, 1.0f);
 
 	aspect_ = static_cast<float>(view_width_) / view_height_;
 	projection_matrix_ =

@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 	 */
 	gui.assignMesh(&mesh);
 
-	glm::vec4 light_position = glm::vec4(0.0f, 50.0f, 0.0f, 1.0f);
+	//glm::vec4 light_position = glm::vec4(0.0f, 50.0f, 0.0f, 1.0f);
 	MatrixPointers mats; // Define MatrixPointers here for lambda to capture
 
 	/*
@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
 	std::function<glm::mat4()> proj_data = [&mats]() { return *mats.projection; };
 	std::function<glm::mat4()> identity_mat = [](){ return glm::mat4(1.0f); };
 	std::function<glm::vec3()> cam_data = [&gui](){ return gui.getCamera(); };
-	std::function<glm::vec4()> lp_data = [&light_position]() { return light_position; };
+	std::function<glm::vec4()> lp_data = [&gui]() { return gui.getLightPosition(); };
 	
 	
 	auto std_model = std::make_shared<ShaderUniform<const glm::mat4*>>("model", model_data);
@@ -595,7 +595,7 @@ int main(int argc, char* argv[])
 		gui.updateMatrices();
 		mats = gui.getMatrixPointers();
 
-		for(int k = 0; k < mesh.skeleton.keyframes.size(); ++k) {
+		for(int k = 0; k < (int)mesh.skeleton.keyframes.size(); ++k) {
 			mesh.changeSkeleton(mesh.skeleton.keyframes[k]);
 			mesh.updateAnimation();
 
@@ -712,12 +712,17 @@ int main(int argc, char* argv[])
 			      << cur_time << " sec";
 			glfwSetWindowTitle(window, title.str().data());
 			//pass in animation state to updateAnimation
-			mesh.updateAnimation(cur_time, gui.getAnimationState());
+			LightCam lc;
+			mesh.updateAnimation(cur_time, gui.getAnimationState(),lc);
+			gui.setLightPosition(lc.light_pos);
+			gui.changeCamera(lc.camera_pos, lc.camera_rot);
 		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
 			gui.clearPose();
 		}
 		// FIXME: update the preview textures here
+
+		//cout<<glm::to_string(gui.getCamera())<<endl;
 
 		if(gui.saveTexture()) {
 			GLuint FramebufferName = 0;
@@ -819,7 +824,7 @@ int main(int argc, char* argv[])
 			glm::mat4 view = gui.getView();
 			CHECK_GL_ERROR(	glUniformMatrix4fv(light_projection_location, 1, GL_FALSE, &projection[0][0]));
 			CHECK_GL_ERROR(	glUniformMatrix4fv(light_view_location, 1, GL_FALSE, &view[0][0]));
-			CHECK_GL_ERROR(	glUniform4fv(light_offset_location, 1, &light_position[0]));
+			CHECK_GL_ERROR(	glUniform4fv(light_offset_location, 1, gui.getLightPositionPtr()));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, light_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
 		}
@@ -860,7 +865,7 @@ int main(int argc, char* argv[])
 		glViewport(main_view_width, 0, preview_width, main_view_height);
 		vector<GLuint> texture_locs = gui.getTextureLocs();
 		glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
-		for (int quad = 0; quad <  texture_locs.size(); ++quad) {
+		for (int quad = 0; quad < (int) texture_locs.size(); ++quad) {
 		//glViewport(main_view_width, main_view_height - (quad + 1) *preview_height, preview_width, preview_height);
 
 			GLuint text0 = texture_locs[quad];

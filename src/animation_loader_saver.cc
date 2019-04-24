@@ -27,10 +27,10 @@ void Mesh::saveAnimationTo(const std::string& fn)
 	json js; 
 	js["size"] = skeleton.keyframes.size();
 	js["bones"] = skeleton.joints.size();
-	for(int i = 0; i < skeleton.keyframes.size(); ++i) {
+	for(int i = 0; i <(int) skeleton.keyframes.size(); ++i) {
 		KeyFrame current_keyframe = skeleton.keyframes[i];
 		js["keyframe" + to_string(i)] = json::array();
-		for (int j = 0; j < current_keyframe.rel_rot.size(); ++j) {
+		for (int j = 0; j < (int) current_keyframe.rel_rot.size(); ++j) {
 			glm::fquat current_quat = current_keyframe.rel_rot[j];
 			js["keyframe" + to_string(i)] += {current_quat[0], current_quat[1], current_quat[2], current_quat[3]};
 

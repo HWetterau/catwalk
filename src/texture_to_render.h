@@ -29,6 +29,7 @@ public:
 			std::swap(tex_, other.tex_);
 			std::swap(dep_, other.dep_);
 		}
+		return other;
 	}
 
 private:

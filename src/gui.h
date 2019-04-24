@@ -5,7 +5,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include "bone_geometry.h"
-
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <iostream>
+#include <string>
+#include <glm/gtx/string_cast.hpp>
 
 struct Mesh;
 
@@ -41,6 +46,7 @@ public:
 	bool isPoseDirty() const { return pose_changed_; }
 	void clearPose() { pose_changed_ = false; }
 	const float* getLightPositionPtr() const { return &light_position_[0]; }
+
 	
 	int getCurrentBone() const { return current_bone_; }
 	const int* getCurrentBonePointer() const { return &current_bone_; }
@@ -79,8 +85,21 @@ public:
 
 	glm::mat4 getProjection() const { return projection_matrix_; }
 	glm::mat4 getView() const { return view_matrix_; }
-
-
+	void changeCamera(glm::vec3 eye, glm::fquat rot) {
+		cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
+		eye_ = eye; 
+		rel_rot = glm::mat4_cast(rot);
+		glm::mat4 trans = glm::mat4(1.0);
+		trans = glm::translate(trans,eye_);
+		orientation_ = glm::mat3(rel_rot * glm::mat4(start_orientation_) * trans);
+		tangent_ = glm::column(orientation_, 0);
+		up_ = glm::column(orientation_, 1);
+		look_ = glm::column(orientation_, 2);
+		
+	//	center_ = eye_ - camera_distance_ * look_;
+	 }
+	glm::vec4 getLightPosition() {return light_position_;}
+	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}
 private:
 	GLFWwindow* window_;
 	Mesh* mesh_;
@@ -111,7 +130,9 @@ private:
 	glm::vec3 tangent_ = glm::cross(look_, up_);
 	glm::vec3 center_ = eye_ - camera_distance_ * look_;
 	glm::mat3 orientation_ = glm::mat3(tangent_, up_, look_);
-	glm::vec4 light_position_;
+	glm::mat3 start_orientation_ = glm::mat3(tangent_, up_, look_);
+	glm::vec4 light_position_ = glm::vec4(0.0f, 50.0f, 0.0f, 1.0f);
+	glm::mat4 rel_rot = glm::mat4(1.0);
 
 	glm::mat4 view_matrix_ = glm::lookAt(eye_, center_, up_);
 	glm::mat4 projection_matrix_;

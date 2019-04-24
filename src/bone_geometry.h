@@ -69,17 +69,31 @@ struct Configuration {
 struct KeyFrame {
 	// coming from the skeleton, from jointRot()
 	std::vector<glm::fquat> rel_rot;
+	glm::vec4 light_pos;
+	glm::vec3 camera_pos;
+	//if rotations dont work out use center and glm look at
+	glm::fquat camera_rot;
 
 	static void interpolate(const KeyFrame& from,
 	                        const KeyFrame& to,
 	                        float tau,
 	                        KeyFrame& target) {
-		for(int i = 0; i < from.rel_rot.size(); ++i){
+		for(int i = 0; i < (int)from.rel_rot.size(); ++i){
 			target.rel_rot.push_back(glm::slerp(from.rel_rot[i], to.rel_rot[i], tau));
 		}
-
+		target.light_pos = glm::mix(from.light_pos, to.light_pos, tau);
+		target.camera_pos = glm::mix(from.camera_pos, to.camera_pos,tau);
+		target.camera_rot = glm::slerp(from.camera_rot, to.camera_rot, tau);
 	}
 };
+
+struct LightCam {
+	glm::vec4 light_pos;
+	glm::vec3 camera_pos;
+	//if rotations dont work out use center and glm look at
+	glm::fquat camera_rot;
+};
+
 
 struct AnimationState {
 	int current_keyframe;
@@ -201,7 +215,7 @@ struct Mesh {
 	int getNumberOfBones() const;
 	glm::vec3 getCenter() const { return 0.5f * glm::vec3(bounds.min + bounds.max); }
 	const Configuration* getCurrentQ() const; // Configuration is abbreviated as Q
-	void updateAnimation(float t,  AnimationState* a);
+	void updateAnimation(float t,  AnimationState* a, LightCam& lc);
 	void updateAnimation();
 
 	void saveAnimationTo(const std::string& fn);
