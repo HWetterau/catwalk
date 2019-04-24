@@ -85,6 +85,7 @@ public:
 
 	glm::mat4 getProjection() const { return projection_matrix_; }
 	glm::mat4 getView() const { return view_matrix_; }
+	glm::mat4 lightTransform();
 	void changeCamera(glm::vec3 eye, glm::fquat rot, float camera_dist) {
 		//cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
 		//cout<<"use eye "<<glm::to_string(eye)<<endl;
@@ -103,6 +104,9 @@ public:
 	glm::vec4 getLightPosition() {return light_position_;}
 	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}
 	bool getOnLight(){return on_light_;}
+		
+	enum {x_axis,z_axis,y_axis, none};
+		
 
 private:
 	GLFWwindow* window_;
@@ -143,6 +147,8 @@ private:
 	glm::mat4 view_matrix_ = glm::lookAt(eye_, center_, up_);
 	glm::mat4 projection_matrix_;
 	glm::mat4 model_matrix_ = glm::mat4(1.0f);
+
+	int chosen_axis = none;
 
 	bool captureWASDUPDOWN(int key, int action);
 

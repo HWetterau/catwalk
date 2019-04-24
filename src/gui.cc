@@ -367,6 +367,12 @@ glm::mat4 GUI::boneTransform(){
 		return mesh_->skeleton.joints[j.parent_index].d * toworld *  scale;
 }
 
+glm::mat4 GUI::lightTransform(){
+	glm::mat4 trans = glm::mat4(1.0);
+	return glm::translate(trans,glm::vec3(light_position_));
+	
+}
+
 void GUI::mousePosCallback(double mouse_x, double mouse_y)
 {
 	last_x_ = current_x_;
@@ -431,7 +437,16 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 			pose_changed_ = true;
 		// }
 		return;
-	}
+	} 
+	// else if(on_light_ && drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT) {
+	// 		glm::mat4 t = glm::mat4(1.0);
+	// 		t[3][0] = delta_x;
+	// 		t[3][1] = delta_y; //translation in screen space
+	// 		//t = glm::inverse(projection_matrix_ * view_matrix_) * t;
+	// 		light_position_ = glm::inverse(glm::mat4(orientation_)) * t * light_position_ ;
+	// 		cout << "orientation " << glm::to_string(glm::mat4(orientation_)) << endl;
+	// 		cout << " CHANGED light pos " << glm::to_string(light_position_) << endl;
+	// }
 
 	// FIXME: highlight bones that have been moused over
 	//go from screen coords to ndc (divide by width, multiply by 2 and subtract 1)
@@ -456,13 +471,40 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		glm::mat4 light_coords = glm::mat4(1.0);
 		light_coords[3]= light_position_;
 		light_coords = glm::inverse(light_coords);
-		cout<<"light pos "<<glm::to_string(light_position_)<<endl;
-		double foo;
-		if(sphereIntersect(glm::dvec3(light_coords*glm::vec4(eye_,1.0)),  glm::dvec3(light_coords*dir),foo)){
-			cout<<"intersection !!!!!!!!!!!!!!!"<<endl;
+		// cout<<"light pos "<<glm::to_string(light_position_)<<endl;
+		double foo = 400;
+		chosen_axis = none;
+
+		if (intersectLocal(glm::dvec3(light_coords*glm::vec4(eye_,1)), glm::dvec3(light_coords*dir),foo,4.0)){
+			//Z axis!!
+			chosen_axis = z_axis;
+		}
+		double xt;
+		light_coords = glm::inverse(glm::mat4(glm::vec4(0,1,0,0),glm::vec4(0,0,1,0),glm::vec4(1,0,0,0), light_position_));
+		if (intersectLocal(glm::dvec3(light_coords*glm::vec4(eye_,1)), glm::dvec3(light_coords*dir),xt,4.0)){
+			//x axis!!
+				
+			if(chosen_axis != none && xt<foo){
+				foo = xt;
+				chosen_axis = x_axis;
+			}else if(chosen_axis == none){
+				chosen_axis = x_axis;
+			}
+		}
+		light_coords = glm::inverse(glm::mat4(glm::vec4(0,0,1,0),glm::vec4(1,0,0,0),glm::vec4(0,1,0,0), light_position_-glm::vec4(0,4,0,0)));
+		if (intersectLocal(glm::dvec3(light_coords*glm::vec4(eye_,1)), glm::dvec3(light_coords*dir),xt,4.0)){
+			//y axis!!
+			if(chosen_axis != none && xt<foo){
+				foo = xt;
+				chosen_axis = y_axis;
+			}else if(chosen_axis == none){
+				chosen_axis = y_axis;
+			}
+		}
+		if(chosen_axis != none){
 			on_light_ = true;
 		}else{
-			on_light_ = false;
+			on_light_= false;
 		}
 
 

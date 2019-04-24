@@ -12,7 +12,9 @@ void main() {
 	gl_Position = mvp * bone_transform  * position;
 	if (position.x == 0 && position.y == 0) {
 		color = vec4(1, 0, 0, 1);
-	} else {
+	} else if (position.y == 0 && position.z == 0){
 		color = vec4(0, 0, 1, 1);
+	} else {
+		color = vec4(0, 1, 0, 1);
 	}
 })zzz"

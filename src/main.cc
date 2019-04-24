@@ -200,6 +200,7 @@ int main(int argc, char* argv[])
 
 	LineMesh cylinder_mesh;
 	LineMesh axes_mesh;
+	LineMesh light_axes_mesh;
 
 	std::vector<glm::vec4> quad_vertices;
 	std::vector<glm::uvec3> quad_faces;
@@ -217,6 +218,7 @@ int main(int argc, char* argv[])
 	//        the cylinder and axes if required by the assignment.
 	create_cylinder_mesh(cylinder_mesh);
 	create_axes_mesh(axes_mesh);
+	create_light_axes_mesh(light_axes_mesh);
 
 	Mesh mesh;
 	mesh.loadPmd(argv[1]);
@@ -296,6 +298,9 @@ int main(int argc, char* argv[])
 	std::function<glm::mat4()> bone_transform = [&gui](){ return gui.boneTransform(); };
 	
 	auto bone_trans = make_uniform("bone_transform", bone_transform);
+
+	std::function<glm::mat4()> light_transform = [&gui](){ return gui.lightTransform(); };
+	auto light_trans = make_uniform("bone_transform", light_transform);
 
 	std::function<vector<glm::mat4>()> d_u_matrix  = [&mesh](){ return mesh.load_d_u(); };
 	auto blend_d_u = make_uniform("blend_d_u", d_u_matrix);
@@ -396,6 +401,19 @@ int main(int argc, char* argv[])
 		{ std_model, std_view, std_proj, bone_trans},
 		{ "fragment_color" }
 		);
+
+
+	RenderDataInput light_axes_pass_input;
+	// questionable second to last argument (size of element)
+	light_axes_pass_input.assign(0, "vertex_position", light_axes_mesh.vertices.data(), light_axes_mesh.vertices.size(), 4, GL_FLOAT);
+	light_axes_pass_input.assignIndex(light_axes_mesh.indices.data(), light_axes_mesh.indices.size(), 2);
+
+	RenderPass light_axes_pass(-1, light_axes_pass_input,
+		{ axes_vertex_shader, nullptr, axes_fragment_shader},
+		{ std_model, std_view, std_proj, light_trans},
+		{ "fragment_color" }
+		);
+
 	
 	//QUAD SETUP
 	GLuint quad_vertex_shader_id = 0;
@@ -830,6 +848,11 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(	glUniform4fv(light_offset_location, 1, gui.getLightPositionPtr()));
 			CHECK_GL_ERROR(	glUniform1i(light_selected_location, gui.getOnLight()));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, light_faces.size() * 3, GL_UNSIGNED_INT, 0));
+
+			light_axes_pass.setup();
+			CHECK_GL_ERROR(glDrawElements(GL_LINES,
+											light_axes_mesh.indices.size() * 2,
+											GL_UNSIGNED_INT, 0));
 
 		}
 		draw_cylinder = (current_bone != -1 && gui.isTransparent());
