@@ -392,6 +392,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 
 	bool drag_camera = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_RIGHT;
 	bool drag_bone = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT;
+	bool drag_light = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_MIDDLE && chosen_axis != none;
 
 	if (drag_camera) {
 		glm::vec3 axis = glm::normalize(
@@ -437,7 +438,46 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 			pose_changed_ = true;
 		// }
 		return;
-	} 
+	} else if(drag_light){
+			glm::vec4 lightpos =  light_position_;
+			lightpos = projection_matrix_ * view_matrix_ * lightpos;
+			lightpos = lightpos / glm::vec4(lightpos.w,lightpos.w,lightpos.w,lightpos.w);
+			glm::vec2 ndc_coords = glm::vec2((lightpos.x+1)*view_width_/2, (lightpos.y+1)*view_height_/2);
+			glm::vec2 drag = mouse_end-mouse_start;
+			glm::vec4 lightend;
+			glm::vec2 ndc_coords2;
+			glm::vec2 axis_dir;
+			float drag_speed = 0.001;
+		switch(chosen_axis){
+			case x_axis:
+				lightend =  light_position_+glm::vec4(4,0,0,0);
+				lightend = projection_matrix_ * view_matrix_ * lightend;
+				lightend = lightend / glm::vec4(lightend.w,lightend.w,lightend.w,lightend.w);
+				ndc_coords2 = glm::vec2((lightend.x+1)*view_width_/2, (lightend.y+1)*view_height_/2);
+				axis_dir = ndc_coords2 - ndc_coords;
+				//cout<<"dot product "<<glm::dot(axis_dir,drag)*0.01<<endl;
+				light_position_.x+=glm::dot(axis_dir,drag)*drag_speed;
+				break;
+			case y_axis:
+				lightend =  light_position_+glm::vec4(0,4,0,0);
+				lightend = projection_matrix_ * view_matrix_ * lightend;
+				lightend = lightend / glm::vec4(lightend.w,lightend.w,lightend.w,lightend.w);
+				ndc_coords2 = glm::vec2((lightend.x+1)*view_width_/2, (lightend.y+1)*view_height_/2);
+				axis_dir = ndc_coords2 - ndc_coords;
+				light_position_.y+=glm::dot(axis_dir,drag)*drag_speed;
+				break;
+			case z_axis:
+				lightend =  light_position_+glm::vec4(0,0,4,0);
+				lightend = projection_matrix_ * view_matrix_ * lightend;
+				lightend = lightend / glm::vec4(lightend.w,lightend.w,lightend.w,lightend.w);
+				ndc_coords2 = glm::vec2((lightend.x+1)*view_width_/2, (lightend.y+1)*view_height_/2);
+				axis_dir = ndc_coords2 - ndc_coords;
+				light_position_.z+=glm::dot(axis_dir,drag)*drag_speed;
+				break;
+			default:
+				break;
+		}
+	}
 	// else if(on_light_ && drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT) {
 	// 		glm::mat4 t = glm::mat4(1.0);
 	// 		t[3][0] = delta_x;
@@ -468,6 +508,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	glm::vec4 dir = world_coords - glm::vec4(eye_,1);
 	//cout<<"ray direction "<< glm::to_string(dir)<<endl;
 
+	if(!drag_state_){
 		glm::mat4 light_coords = glm::mat4(1.0);
 		light_coords[3]= light_position_;
 		light_coords = glm::inverse(light_coords);
@@ -506,6 +547,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		}else{
 			on_light_= false;
 		}
+	}
 
 
 	int min_bone = -1;
