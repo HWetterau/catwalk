@@ -18,6 +18,42 @@ namespace {
 }
 using namespace std;
 
+bool sphereIntersect(glm::dvec3 p, glm::dvec3 dir, double& t)
+{
+	
+	glm::dvec3 oc = -p;
+	double a = glm::dot(dir,dir);
+	double b = 2.0* glm::dot(oc, dir);
+	double c = glm::dot(oc,oc)-1;
+	double discriminant = b * b - 4 * a * c;
+	// double b = glm::dot(v, dir);
+	// double discriminant = b*b - glm::dot(v,v) + 1;
+
+	if( discriminant < 0.0 ) {
+		return false;
+	}
+
+	discriminant = sqrt( discriminant );
+	double t2 = b + discriminant;
+
+	if( t2 <= 0.0001 ) {
+		return false;
+	}
+
+	
+	double t1 = b - discriminant;
+
+	if( t1 > 0.0001) {
+		t = t1;
+	} else {
+		t = t2;
+	}
+
+	return true;
+}
+
+
+
 
 bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t, double height){
 	double x0 = p[0];
@@ -218,6 +254,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		}
 		k.light_pos = light_position_;
 		k.camera_pos = eye_;
+		cout<<"save eye_ "<<glm::to_string(eye_)<<endl;
 		k.camera_rot = glm::quat_cast(rel_rot);
 
 		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
@@ -279,6 +316,9 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		}
 		if(selected_frame != -1){
 			mesh_->changeSkeleton(mesh_->skeleton.keyframes[selected_frame]);
+			changeCamera(mesh_->skeleton.keyframes[selected_frame].camera_pos,mesh_->skeleton.keyframes[selected_frame].camera_rot,
+						 mesh_->skeleton.keyframes[selected_frame].camera_dist);
+			light_position_=mesh_->skeleton.keyframes[selected_frame].light_pos;
 			pose_changed_ = true;
 		}
 	} else if (key == GLFW_KEY_DELETE && action == GLFW_RELEASE) {
@@ -412,6 +452,20 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	//cout<<"world coords "<< glm::to_string(world_coords)<<endl;
 	glm::vec4 dir = world_coords - glm::vec4(eye_,1);
 	//cout<<"ray direction "<< glm::to_string(dir)<<endl;
+
+		glm::mat4 light_coords = glm::mat4(1.0);
+		light_coords[3]= light_position_;
+		light_coords = glm::inverse(light_coords);
+		cout<<"light pos "<<glm::to_string(light_position_)<<endl;
+		double foo;
+		if(sphereIntersect(glm::dvec3(light_coords*glm::vec4(eye_,1.0)),  glm::dvec3(light_coords*dir),foo)){
+			cout<<"intersection !!!!!!!!!!!!!!!"<<endl;
+			on_light_ = true;
+		}else{
+			on_light_ = false;
+		}
+
+
 	int min_bone = -1;
 	double min_time = 0;
 	for(int bone = 1; bone < mesh_->getNumberOfBones(); ++bone){
@@ -434,6 +488,8 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		} else {
 				n = glm::vec3(0,0,1);
 		}
+
+
 		glm::vec3 normal = glm::normalize(glm::cross(tangent, n));
 		glm::vec3 bitan = glm::normalize(glm::cross(tangent,normal));
 		glm::mat4 tolocal = glm::inverse(glm::mat4(glm::vec4(bitan,0),glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(j.position,1)));
@@ -546,40 +602,52 @@ float GUI::getCurrentPlayTime() const
 bool GUI::captureWASDUPDOWN(int key, int action)
 {
 	if (key == GLFW_KEY_W) {
-		if (fps_mode_)
+		if (fps_mode_){
 			eye_ += zoom_speed_ * look_;
-		else
+			//rel_pos += zoom_speed_ * look_;
+		}
+		else{
 			camera_distance_ -= zoom_speed_;
+		}
+		rel_pos += zoom_speed_ * look_;
 		return true;
 	} else if (key == GLFW_KEY_S) {
-		if (fps_mode_)
+		if (fps_mode_){
 			eye_ -= zoom_speed_ * look_;
-		else
+			//rel_pos -= zoom_speed_ * look_;
+		}
+		else{
 			camera_distance_ += zoom_speed_;
+		}
+		rel_pos -= zoom_speed_ * look_;
 		return true;
 	} else if (key == GLFW_KEY_A) {
 		if (fps_mode_)
 			eye_ -= pan_speed_ * tangent_;
 		else
 			center_ -= pan_speed_ * tangent_;
+		rel_pos -= pan_speed_ * tangent_;
 		return true;
 	} else if (key == GLFW_KEY_D) {
 		if (fps_mode_)
 			eye_ += pan_speed_ * tangent_;
 		else
 			center_ += pan_speed_ * tangent_;
+		rel_pos += pan_speed_ * tangent_;
 		return true;
 	} else if (key == GLFW_KEY_DOWN) {
 		if (fps_mode_)
 			eye_ -= pan_speed_ * up_;
 		else
 			center_ -= pan_speed_ * up_;
+		rel_pos -= pan_speed_ * up_;
 		return true;
 	} else if (key == GLFW_KEY_UP) {
 		if (fps_mode_)
 			eye_ += pan_speed_ * up_;
 		else
 			center_ += pan_speed_ * up_;
+		rel_pos += pan_speed_ * up_;
 		return true;
 	}
 	return false;

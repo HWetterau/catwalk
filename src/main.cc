@@ -544,6 +544,7 @@ int main(int argc, char* argv[])
 	GLint light_projection_location = 0;
 	GLint light_view_location = 0;
 	GLint light_offset_location = 0;
+	GLint light_selected_location = 0;
 
 
 	CHECK_GL_ERROR(light_program_id = glCreateProgram());
@@ -562,6 +563,8 @@ int main(int argc, char* argv[])
 		glGetUniformLocation(light_program_id, "view"));
 	CHECK_GL_ERROR(light_offset_location =
 		glGetUniformLocation(light_program_id, "offset"));
+	CHECK_GL_ERROR(light_selected_location =
+		glGetUniformLocation(light_program_id, "selected"));
 
 
 
@@ -715,7 +718,7 @@ int main(int argc, char* argv[])
 			LightCam lc;
 			mesh.updateAnimation(cur_time, gui.getAnimationState(),lc);
 			gui.setLightPosition(lc.light_pos);
-			gui.changeCamera(lc.camera_pos, lc.camera_rot);
+			gui.changeCamera(lc.camera_pos, lc.camera_rot, lc.camera_dist);
 		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
 			gui.clearPose();
@@ -825,6 +828,7 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(	glUniformMatrix4fv(light_projection_location, 1, GL_FALSE, &projection[0][0]));
 			CHECK_GL_ERROR(	glUniformMatrix4fv(light_view_location, 1, GL_FALSE, &view[0][0]));
 			CHECK_GL_ERROR(	glUniform4fv(light_offset_location, 1, gui.getLightPositionPtr()));
+			CHECK_GL_ERROR(	glUniform1i(light_selected_location, gui.getOnLight()));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, light_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
 		}

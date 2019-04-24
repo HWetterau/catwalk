@@ -73,6 +73,7 @@ struct KeyFrame {
 	glm::vec3 camera_pos;
 	//if rotations dont work out use center and glm look at
 	glm::fquat camera_rot;
+	float camera_dist;
 
 	static void interpolate(const KeyFrame& from,
 	                        const KeyFrame& to,
@@ -83,7 +84,9 @@ struct KeyFrame {
 		}
 		target.light_pos = glm::mix(from.light_pos, to.light_pos, tau);
 		target.camera_pos = glm::mix(from.camera_pos, to.camera_pos,tau);
+		target.camera_dist = glm::mix(from.camera_dist, to.camera_dist,tau);
 		target.camera_rot = glm::slerp(from.camera_rot, to.camera_rot, tau);
+
 	}
 };
 
@@ -92,6 +95,8 @@ struct LightCam {
 	glm::vec3 camera_pos;
 	//if rotations dont work out use center and glm look at
 	glm::fquat camera_rot;
+		float camera_dist;
+
 };
 
 

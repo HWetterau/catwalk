@@ -85,8 +85,9 @@ public:
 
 	glm::mat4 getProjection() const { return projection_matrix_; }
 	glm::mat4 getView() const { return view_matrix_; }
-	void changeCamera(glm::vec3 eye, glm::fquat rot) {
-		cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
+	void changeCamera(glm::vec3 eye, glm::fquat rot, float camera_dist) {
+		//cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
+		//cout<<"use eye "<<glm::to_string(eye)<<endl;
 		eye_ = eye; 
 		rel_rot = glm::mat4_cast(rot);
 		glm::mat4 trans = glm::mat4(1.0);
@@ -95,11 +96,14 @@ public:
 		tangent_ = glm::column(orientation_, 0);
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
+		center_ = eye_ + camera_distance_ * look_;
+		view_matrix_ = glm::lookAt(eye_, center_, up_);
 		
-	//	center_ = eye_ - camera_distance_ * look_;
 	 }
 	glm::vec4 getLightPosition() {return light_position_;}
 	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}
+	bool getOnLight(){return on_light_;}
+
 private:
 	GLFWwindow* window_;
 	Mesh* mesh_;
@@ -112,6 +116,7 @@ private:
 	bool fps_mode_ = false;
 	bool pose_changed_ = true;
 	bool transparent_ = false;
+	bool on_light_ = false;
 	int current_bone_ = -1;
 	int current_button_ = -1;
 	float roll_speed_ = M_PI / 64.0f;
@@ -125,6 +130,7 @@ private:
 	bool save_screen_ = false;
 
 	glm::vec3 eye_ = glm::vec3(0.0f, 0.1f, camera_distance_);
+	glm::vec3 rel_pos = eye_;
 	glm::vec3 up_ = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 look_ = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 tangent_ = glm::cross(look_, up_);
