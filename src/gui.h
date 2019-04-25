@@ -107,6 +107,7 @@ public:
 
 	glm::vec4 getLightColor(){return light_color_;}
 	void setLightColor(glm::vec4 color){ light_color_ = color;}
+	void computeColor();
 		
 	enum {x_axis,z_axis,y_axis, none};
 	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
@@ -171,6 +172,7 @@ private:
 	int replace_texture = -1;
 	bool cursor = false;
 	int color = WHITE;
+	double intensity_ = 1.0;
 };
 
 #endif

@@ -199,7 +199,34 @@ void GUI::assignMesh(Mesh* mesh)
 	center_ = mesh_->getCenter();
 }
 
-
+void GUI::computeColor(){
+	double intensity = intensity_;
+	switch(color) {
+		case WHITE:
+			light_color_ = glm::vec4(intensity,intensity,intensity,1);
+			break;
+		case RED:
+			light_color_ = glm::vec4(intensity,0.0,0.0,1);
+			break;
+		case ORANGE:
+			light_color_ = glm::vec4(intensity,intensity/2.0,0.0,1);
+			break;
+		case YELLOW:
+			light_color_ = glm::vec4(intensity,intensity,0.0,1);
+			break;
+		case GREEN:
+			light_color_ = glm::vec4(0.0,intensity,0.0,1);
+			break;
+		case BLUE:
+			light_color_ = glm::vec4(0.0,0.0,intensity,1);
+			break;
+		case PURPLE:
+			light_color_ = glm::vec4(intensity/2.0,0.0,intensity,1);
+			break;
+		default:
+			break;
+	}
+}
 
 void GUI::keyCallback(int key, int scancode, int action, int mods)
 {
@@ -238,32 +265,8 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		//fps_mode_ = !fps_mode_;
 		color++; 
 		color = color % NUMCOLORS;
-		double intensity = 1.0;
-		switch(color) {
-			case WHITE:
-				light_color_ = glm::vec4(intensity,intensity,intensity,1);
-				break;
-			case RED:
-				light_color_ = glm::vec4(intensity,0.0,0.0,1);
-				break;
-			case ORANGE:
-				light_color_ = glm::vec4(intensity,intensity/2.0,0.0,1);
-				break;
-			case YELLOW:
-				light_color_ = glm::vec4(intensity,intensity,0.0,1);
-				break;
-			case GREEN:
-				light_color_ = glm::vec4(0.0,intensity,0.0,1);
-				break;
-			case BLUE:
-				light_color_ = glm::vec4(0.0,0.0,intensity,1);
-				break;
-			case PURPLE:
-				light_color_ = glm::vec4(intensity/2.0,0.0,intensity,1);
-				break;
-			default:
-				break;
-		}
+		computeColor();
+		
 	} else if (key == GLFW_KEY_LEFT_BRACKET && action == GLFW_RELEASE) {
 		current_bone_--;
 		current_bone_ += mesh_->getNumberOfBones();
@@ -367,6 +370,22 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 	} else if (key == GLFW_KEY_I && action == GLFW_RELEASE) {
 		//toggle cursor
 		cursor = !cursor;
+	}else if (key == GLFW_KEY_EQUAL && action != GLFW_RELEASE) {
+		if(intensity_< 1.0){
+			intensity_+=.05;
+		}
+		if(intensity_> 1.0){
+			intensity_ = 1.0;
+		}
+		computeColor();
+	}else if (key == GLFW_KEY_MINUS && action != GLFW_RELEASE) {
+		if(intensity_> 0.0){
+			intensity_-=.05;
+		}
+		if(intensity_< 0.0){
+			intensity_ = 0.0;
+		}
+		computeColor();
 	}
 
 	// FIXME: implement other controls here.
