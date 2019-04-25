@@ -270,6 +270,7 @@ int main(int argc, char* argv[])
 	std::function<glm::mat4()> identity_mat = [](){ return glm::mat4(1.0f); };
 	std::function<glm::vec3()> cam_data = [&gui](){ return gui.getCamera(); };
 	std::function<glm::vec4()> lp_data = [&gui]() { return gui.getLightPosition(); };
+	std::function<glm::vec4()> lc_data = [&gui]() { return gui.getLightColor(); };
 	
 	
 	auto std_model = std::make_shared<ShaderUniform<const glm::mat4*>>("model", model_data);
@@ -278,6 +279,7 @@ int main(int argc, char* argv[])
 	auto std_camera = make_uniform("camera_position", cam_data);
 	auto std_proj = make_uniform("projection", proj_data);
 	auto std_light = make_uniform("light_position", lp_data);
+	auto std_color = make_uniform("light_color", lc_data);
 
 	std::function<float()> alpha_data = [&gui]() {
 		static const float transparet = 0.5; // Alpha constant goes here
@@ -350,7 +352,7 @@ int main(int argc, char* argv[])
 			  std_light,
 			  std_camera, object_alpha,
 			  joint_trans, joint_rot,
-			  blend_d_u
+			  blend_d_u, std_color
 			},
 			{ "fragment_color" }
 			);
@@ -563,6 +565,7 @@ int main(int argc, char* argv[])
 	GLint light_view_location = 0;
 	GLint light_offset_location = 0;
 	GLint light_selected_location = 0;
+	GLint light_color_location = 0;
 
 
 	CHECK_GL_ERROR(light_program_id = glCreateProgram());
@@ -583,6 +586,8 @@ int main(int argc, char* argv[])
 		glGetUniformLocation(light_program_id, "offset"));
 	CHECK_GL_ERROR(light_selected_location =
 		glGetUniformLocation(light_program_id, "selected"));
+	CHECK_GL_ERROR(light_color_location =
+		glGetUniformLocation(light_program_id, "color"));
 
 
 
@@ -736,6 +741,7 @@ int main(int argc, char* argv[])
 			LightCam lc;
 			mesh.updateAnimation(cur_time, gui.getAnimationState(),lc);
 			gui.setLightPosition(lc.light_pos);
+			gui.setLightColor(lc.light_color);
 			gui.changeCamera(lc.camera_pos, lc.camera_rot, lc.camera_dist);
 		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
@@ -843,9 +849,11 @@ int main(int argc, char* argv[])
 
 			glm::mat4 projection = gui.getProjection();
 			glm::mat4 view = gui.getView();
+			glm::vec4 current_color = gui.getLightColor();
 			CHECK_GL_ERROR(	glUniformMatrix4fv(light_projection_location, 1, GL_FALSE, &projection[0][0]));
 			CHECK_GL_ERROR(	glUniformMatrix4fv(light_view_location, 1, GL_FALSE, &view[0][0]));
 			CHECK_GL_ERROR(	glUniform4fv(light_offset_location, 1, gui.getLightPositionPtr()));
+			CHECK_GL_ERROR(	glUniform4fv(light_color_location, 1, &current_color[0]));
 			CHECK_GL_ERROR(	glUniform1i(light_selected_location, gui.getOnLight()));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, light_faces.size() * 3, GL_UNSIGNED_INT, 0));
 

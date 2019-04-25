@@ -104,8 +104,12 @@ public:
 	glm::vec4 getLightPosition() {return light_position_;}
 	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}
 	bool getOnLight(){return on_light_;}
+
+	glm::vec4 getLightColor(){return light_color_;}
+	void setLightColor(glm::vec4 color){ light_color_ = color;}
 		
 	enum {x_axis,z_axis,y_axis, none};
+	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
 		
 
 private:
@@ -142,6 +146,7 @@ private:
 	glm::mat3 orientation_ = glm::mat3(tangent_, up_, look_);
 	glm::mat3 start_orientation_ = glm::mat3(tangent_, up_, look_);
 	glm::vec4 light_position_ = glm::vec4(0.0f, 50.0f, 0.0f, 1.0f);
+	glm::vec4 light_color_= glm::vec4(1,1,1,1);
 	glm::mat4 rel_rot = glm::mat4(1.0);
 
 	glm::mat4 view_matrix_ = glm::lookAt(eye_, center_, up_);
@@ -165,6 +170,7 @@ private:
 	int selected_frame = -1;
 	int replace_texture = -1;
 	bool cursor = false;
+	int color = WHITE;
 };
 
 #endif

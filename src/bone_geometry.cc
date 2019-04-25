@@ -143,6 +143,7 @@ void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 		lc.camera_pos = result.camera_pos;
 		lc.camera_rot = result.camera_rot;
 		lc.camera_dist = result.camera_dist;
+		lc.light_color = result.light_color;
 	}
 
 	skeleton.refreshCache(&currentQ_);

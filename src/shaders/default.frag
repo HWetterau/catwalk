@@ -10,6 +10,7 @@ uniform vec4 ambient;
 uniform vec4 specular;
 uniform float shininess;
 uniform float alpha;
+uniform vec4 light_color;
 uniform sampler2D textureSampler;
 //layout(location = 0) out vec3 color;
 out vec4 fragment_color;
@@ -23,7 +24,7 @@ void main() {
 	if (length(texcolor) == 0.0) {
 		//vec3 color = vec3(0.0, 1.0, 0.0);
 		//vec3 color = vec3(diffuse);
-		vec3 color = vec3(diffuse);
+		vec3 color = vec3(light_color *diffuse);
 		//vec2 randuv = vec2(rand(light_direction.xy), rand(light_direction.zw));
 		//vec3 color = vec3(diffuse) + texture(textureSampler, randuv).xyz;
 		//vec3 color = texture(textureSampler, randuv).xyz;

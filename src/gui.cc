@@ -235,7 +235,35 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		pose_changed_ = true;
 
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
-		fps_mode_ = !fps_mode_;
+		//fps_mode_ = !fps_mode_;
+		color++; 
+		color = color % NUMCOLORS;
+		double intensity = 1.0;
+		switch(color) {
+			case WHITE:
+				light_color_ = glm::vec4(intensity,intensity,intensity,1);
+				break;
+			case RED:
+				light_color_ = glm::vec4(intensity,0.0,0.0,1);
+				break;
+			case ORANGE:
+				light_color_ = glm::vec4(intensity,intensity/2.0,0.0,1);
+				break;
+			case YELLOW:
+				light_color_ = glm::vec4(intensity,intensity,0.0,1);
+				break;
+			case GREEN:
+				light_color_ = glm::vec4(0.0,intensity,0.0,1);
+				break;
+			case BLUE:
+				light_color_ = glm::vec4(0.0,0.0,intensity,1);
+				break;
+			case PURPLE:
+				light_color_ = glm::vec4(intensity/2.0,0.0,intensity,1);
+				break;
+			default:
+				break;
+		}
 	} else if (key == GLFW_KEY_LEFT_BRACKET && action == GLFW_RELEASE) {
 		current_bone_--;
 		current_bone_ += mesh_->getNumberOfBones();
@@ -256,6 +284,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		k.camera_pos = eye_;
 		cout<<"save eye_ "<<glm::to_string(eye_)<<endl;
 		k.camera_rot = glm::quat_cast(rel_rot);
+		k.light_color = light_color_;
 
 		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
 			//insert before
@@ -304,6 +333,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			k.light_pos = light_position_;
 			k.camera_pos = eye_;
 			k.camera_rot = glm::quat_cast(rel_rot);
+			k.light_color = light_color_;
 			mesh_->skeleton.keyframes[selected_frame] = k;
 			replace_texture = selected_frame;
 			save_texture_ = true;
