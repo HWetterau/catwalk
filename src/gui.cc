@@ -286,9 +286,10 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		k.light_pos = light_position_;
 		k.camera_pos = eye_;
 		//k.camera_pos = rel_pos;
-		//cout<<"save eye_ "<<glm::to_string(eye_)<<endl;
+		cout<<"save eye_ "<<glm::to_string(eye_)<<endl;
 		k.camera_rot = glm::quat_cast(rel_rot);
 		k.light_color = light_color_;
+		k.camera_dist = camera_distance_;
 
 		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
 			//insert before
@@ -339,6 +340,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			//k.camera_pos = rel_pos;
 			k.camera_rot = glm::quat_cast(rel_rot);
 			k.light_color = light_color_;
+			k.camera_dist = camera_distance_;
 			mesh_->skeleton.keyframes[selected_frame] = k;
 			replace_texture = selected_frame;
 			save_texture_ = true;

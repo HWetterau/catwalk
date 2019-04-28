@@ -88,18 +88,20 @@ public:
 	glm::mat4 lightTransform();
 	void changeCamera(glm::vec3 eye, glm::fquat rot, float camera_dist) {
 		//cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
-		//cout<<"use eye "<<glm::to_string(eye)<<endl;
-		eye_ = eye; 
+		cout<<"use eye "<<glm::to_string(eye)<<endl;
+
 		rel_rot = glm::mat4_cast(rot);
+		eye_ = center_ - camera_dist * look_; 
 		glm::mat4 trans = glm::mat4(1.0);
-		trans = glm::translate(trans,eye_);
+		trans = glm::translate(trans,eye);
 		orientation_ = glm::mat3(rel_rot * glm::mat4(start_orientation_) * trans);
 		tangent_ = glm::column(orientation_, 0);
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
-		center_ = eye_ + camera_distance_ * look_;
+		//center_ = eye_ + camera_distance_ * look_;
+		cout << "center " << glm::to_string(center_) << endl;
 		view_matrix_ = glm::lookAt(eye_, center_, up_);
-		
+		camera_distance_ = camera_dist;
 	 }
 	glm::vec4 getLightPosition() {return light_position_;}
 	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}

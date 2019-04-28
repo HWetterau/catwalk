@@ -229,6 +229,8 @@ struct Mesh {
 	void saveAnimationTo(const std::string& fn);
 	void loadAnimationFrom(const std::string& fn);
 	glm::vec3 lightSpline(float t);
+	glm::vec3 cameraPosSpline(float t);
+	glm::fquat cameraRotSpline(float t);
 
 	vector<glm::mat4> load_d_u() {
 		vector<glm::mat4> u;
