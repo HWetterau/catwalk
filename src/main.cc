@@ -724,7 +724,7 @@ int main(int argc, char* argv[])
 
 		gui.updateMatrices();
 		mats = gui.getMatrixPointers();
-		cout<<"used eye "<<glm::to_string(gui.getView())<<endl;
+		//cout<<"used eye "<<glm::to_string(gui.getView())<<endl;
 #if 0
 		std::cerr << model_data() << '\n';
 		std::cerr << "call from outside: " << std_model->data_source() << "\n";
@@ -850,10 +850,10 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(glUseProgram(light_program_id));
 
 			glm::mat4 projection = gui.getProjection();
-			glm::mat4 view = gui.getView();
+			const float* view = gui.getView();
 			glm::vec4 current_color = gui.getLightColor();
 			CHECK_GL_ERROR(	glUniformMatrix4fv(light_projection_location, 1, GL_FALSE, &projection[0][0]));
-			CHECK_GL_ERROR(	glUniformMatrix4fv(light_view_location, 1, GL_FALSE, &view[0][0]));
+			CHECK_GL_ERROR(	glUniformMatrix4fv(light_view_location, 1, GL_FALSE, view));
 			CHECK_GL_ERROR(	glUniform4fv(light_offset_location, 1, gui.getLightPositionPtr()));
 			CHECK_GL_ERROR(	glUniform4fv(light_color_location, 1, &current_color[0]));
 			CHECK_GL_ERROR(	glUniform1i(light_selected_location, gui.getOnLight()));

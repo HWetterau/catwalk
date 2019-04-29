@@ -84,23 +84,25 @@ public:
 	bool getCursor() const {return cursor;}
 
 	glm::mat4 getProjection() const { return projection_matrix_; }
-	glm::mat4 getView() const { return view_matrix_; }
+	const float* getView() const { return &view_matrix_[0][0]; }
+
 	glm::mat4 lightTransform();
-	void changeCamera(glm::vec3 eye, glm::fquat rot, float camera_dist) {
+	void changeCamera(glm::vec3 eye, glm::mat3 rot, float camera_dist) {
 		//cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
 		cout<<"changeCamera eye "<<glm::to_string(eye_)<<endl;
 		//cout << "center " << glm::to_string(center_) << endl;
 		//cout << "old up " << glm::to_string(up_) << endl;
-		rel_rot = glm::mat4_cast(rot);
-		//eye_= eye;
+		//rel_rot = glm::mat4_cast(rot);
+		eye_= eye;
 		//eye_ = center_ - camera_dist * look_;
-		orientation_ = glm::mat3(rel_rot * glm::mat4(start_orientation_));
+		// orientation_ = glm::mat3(rel_rot * glm::mat4(start_orientation_));
+		orientation_ = rot;
 		tangent_ = glm::column(orientation_, 0);
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
 		//cout<<"orientation transpose "<<glm::to_string(orientation_*glm::transpose(orientation_))<<endl;
 		//cout << "up " << glm::to_string(up_) << endl;
-		//center_ = eye_ + camera_distance_ * look_;
+		center_ = eye_ + camera_distance_ * look_;
 		//cout << "center " << glm::to_string(center_) << endl;
 		view_matrix_ = glm::lookAt(eye_, center_, up_);
 		//camera_distance_ = camera_dist;

@@ -287,7 +287,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		k.camera_pos = eye_;
 		//k.camera_pos = rel_pos;
 		cout<<"save eye_ "<<glm::to_string(eye_)<<endl;
-		k.camera_rot = glm::quat_cast(rel_rot);
+		k.camera_rot = orientation_;
 		k.light_color = light_color_;
 		k.camera_dist = camera_distance_;
 
@@ -338,7 +338,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			k.light_pos = light_position_;
 			k.camera_pos = eye_;
 			//k.camera_pos = rel_pos;
-			k.camera_rot = glm::quat_cast(rel_rot);
+			k.camera_rot = orientation_;
 			k.light_color = light_color_;
 			k.camera_dist = camera_distance_;
 			mesh_->skeleton.keyframes[selected_frame] = k;
@@ -453,7 +453,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 				glm::vec3(mouse_direction.y, -mouse_direction.x, 0.0f)
 				);
 		glm::mat4 rot =	glm::rotate(rotation_speed_, axis);	
-		rel_rot = rot * rel_rot;  //questionable order
+		//rel_rot = rot * rel_rot;  //questionable order
 		orientation_ =
 			glm::mat3(rot * glm::mat4(orientation_));
 		tangent_ = glm::column(orientation_, 0);

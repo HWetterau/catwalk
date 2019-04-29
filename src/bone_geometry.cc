@@ -129,17 +129,17 @@ glm::vec3 Mesh::cameraPosSpline(float t){
 	return glm::catmullRom(skeleton.keyframes[cp0].camera_pos, skeleton.keyframes[cp1].camera_pos, skeleton.keyframes[cp2].camera_pos, skeleton.keyframes[cp3].camera_pos, local_t);
 }
 
-glm::fquat Mesh::cameraRotSpline(float t){
+glm::mat3 Mesh::cameraRotSpline(float t){
 	int cp0 = glm::clamp<int>(t - 1, 0, skeleton.keyframes.size() - 1);
     int cp1 = glm::clamp<int>(t,     0, skeleton.keyframes.size() - 1);
     int cp2 = glm::clamp<int>(t + 1, 0, skeleton.keyframes.size() - 1);
     int cp3 = glm::clamp<int>(t + 2, 0, skeleton.keyframes.size() - 1);
 	float local_t = glm::fract(t);
 
-	glm::mat3 m1 = glm::toMat3(skeleton.keyframes[cp0].camera_rot);
-	glm::mat3 m2 = glm::toMat3(skeleton.keyframes[cp1].camera_rot);
-	glm::mat3 m3 = glm::toMat3(skeleton.keyframes[cp2].camera_rot);
-	glm::mat3 m4 = glm::toMat3(skeleton.keyframes[cp3].camera_rot);
+	glm::mat3 m1 = skeleton.keyframes[cp0].camera_rot;
+	glm::mat3 m2 = skeleton.keyframes[cp1].camera_rot;
+	glm::mat3 m3 = skeleton.keyframes[cp2].camera_rot;
+	glm::mat3 m4 = skeleton.keyframes[cp3].camera_rot;
 
 	glm::mat3 result = glm::mat3(1.0);
 
@@ -155,7 +155,7 @@ glm::fquat Mesh::cameraRotSpline(float t){
 
 	//cout << "spline mat " << glm::to_string(result) << endl;
 
-	return glm::quat_cast(result);
+	return result;
 	//return glm::squad(skeleton.keyframes[cp0].camera_rot, skeleton.keyframes[cp3].camera_rot, skeleton.keyframes[cp1].camera_rot, skeleton.keyframes[cp2].camera_rot,  local_t);
 }
 
