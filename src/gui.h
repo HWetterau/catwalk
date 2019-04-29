@@ -47,7 +47,7 @@ public:
 	void clearPose() { pose_changed_ = false; }
 	const float* getLightPositionPtr() const { return &light_position_[0]; }
 
-	
+
 	int getCurrentBone() const { return current_bone_; }
 	const int* getCurrentBonePointer() const { return &current_bone_; }
 	bool setCurrentBone(int i);
@@ -63,12 +63,12 @@ public:
 	bool saveTexture() const { return save_texture_; }
 	void resetTexture() { save_texture_ = false; }
 
-	void addTexture(GLuint loc) { 
+	void addTexture(GLuint loc) {
 		if (replace_texture != -1){
 			texture_locations[replace_texture] = loc;
 
 		} else if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()){
-		
+
 			texture_locations.insert(texture_locations.begin() + selected_frame, loc);
 		}else {
 			texture_locations.push_back(loc);
@@ -88,20 +88,22 @@ public:
 	glm::mat4 lightTransform();
 	void changeCamera(glm::vec3 eye, glm::fquat rot, float camera_dist) {
 		//cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
-		cout<<"use eye "<<glm::to_string(eye)<<endl;
-
+		cout<<"changeCamera eye "<<glm::to_string(eye_)<<endl;
+		//cout << "center " << glm::to_string(center_) << endl;
+		//cout << "old up " << glm::to_string(up_) << endl;
 		rel_rot = glm::mat4_cast(rot);
-		eye_ = center_ - camera_dist * look_; 
-		glm::mat4 trans = glm::mat4(1.0);
-		trans = glm::translate(trans,eye);
-		orientation_ = glm::mat3(rel_rot * glm::mat4(start_orientation_) * trans);
+		//eye_= eye;
+		//eye_ = center_ - camera_dist * look_;
+		orientation_ = glm::mat3(rel_rot * glm::mat4(start_orientation_));
 		tangent_ = glm::column(orientation_, 0);
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
+		//cout<<"orientation transpose "<<glm::to_string(orientation_*glm::transpose(orientation_))<<endl;
+		//cout << "up " << glm::to_string(up_) << endl;
 		//center_ = eye_ + camera_distance_ * look_;
-		cout << "center " << glm::to_string(center_) << endl;
+		//cout << "center " << glm::to_string(center_) << endl;
 		view_matrix_ = glm::lookAt(eye_, center_, up_);
-		camera_distance_ = camera_dist;
+		//camera_distance_ = camera_dist;
 	 }
 	glm::vec4 getLightPosition() {return light_position_;}
 	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}
@@ -110,10 +112,10 @@ public:
 	glm::vec4 getLightColor(){return light_color_;}
 	void setLightColor(glm::vec4 color){ light_color_ = color;}
 	void computeColor();
-		
+
 	enum {x_axis,z_axis,y_axis, none};
 	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
-		
+
 
 private:
 	GLFWwindow* window_;
@@ -133,8 +135,8 @@ private:
 	float roll_speed_ = M_PI / 64.0f;
 	float last_x_ = 0.0f, last_y_ = 0.0f, current_x_ = 0.0f, current_y_ = 0.0f;
 	float camera_distance_ = 30.0;
-	float pan_speed_ = 0.1f;
-	float rotation_speed_ = 0.02f;
+	float pan_speed_ = 0.5f;//0.1
+	float rotation_speed_ = 0.2f;//0.02
 	float zoom_speed_ = 0.1f;
 	float aspect_;
 

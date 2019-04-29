@@ -143,13 +143,17 @@ glm::fquat Mesh::cameraRotSpline(float t){
 
 	glm::mat3 result = glm::mat3(1.0);
 
-	cout << "m1 " << glm::to_string(m1) << endl;
+	//cout << "m1 " << glm::to_string(m1) << endl;
 	result[1] = glm::normalize(glm::catmullRom(glm::column(m1, 1), glm::column(m2, 1), glm::column(m3, 1), glm::column(m4, 1), local_t));
-	result[2] = glm::normalize(glm::catmullRom(glm::column(m1, 2), glm::column(m2, 2), glm::column(m3, 2), glm::column(m4, 2), local_t));
-	
+	glm::vec3 temp = glm::normalize(glm::catmullRom(glm::column(m1, 2), glm::column(m2, 2), glm::column(m3, 2), glm::column(m4, 2), local_t));
+
+	temp-= glm::dot(temp, glm::column(result, 1))*glm::column(result, 1);
+	temp = glm::normalize(temp);
+	result[2] = temp;
+
 	result[0] = glm::normalize(glm::cross(glm::column(result, 1), glm::column(result, 2)));
 
-	cout << "spline mat " << glm::to_string(result) << endl;
+	//cout << "spline mat " << glm::to_string(result) << endl;
 
 	return glm::quat_cast(result);
 	//return glm::squad(skeleton.keyframes[cp0].camera_rot, skeleton.keyframes[cp3].camera_rot, skeleton.keyframes[cp1].camera_rot, skeleton.keyframes[cp2].camera_rot,  local_t);
@@ -169,15 +173,15 @@ void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 		} else if (a->current_time - a->old_time > (1/fps)) {
 
 			a->old_time = a->current_time;
-	
+
  			if (a->next_keyframe < a->end_keyframe) {
 				a->current_keyframe = a->next_keyframe;
 				a->next_keyframe++;
 				interpolate = true;
-	
+
 			} else {
 				a->current_keyframe = a->next_keyframe;
-			
+
 			}
 
 		}
@@ -198,27 +202,28 @@ void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 		changeSkeleton(result);
 		//lc.light_pos = result.light_pos;
 		//lc.camera_pos = result.camera_pos;
-		
+
 		//lc.camera_rot = result.camera_rot;
+	//	lc.camera_rot = skeleton.keyframes[0].camera_rot;
 		lc.camera_dist = result.camera_dist;
 		lc.light_color = result.light_color;
 	}
 
 	skeleton.refreshCache(&currentQ_);
-	
+
 }
 
 void Mesh::updateAnimation()
-{	
+{
 	skeleton.refreshCache(&currentQ_);
 }
 
 void Mesh::changeSkeleton(KeyFrame& k)
-{	
+{
 	skeleton.joints[0].t = glm::toMat4(k.rel_rot[0]);
 	skeleton.joints[0].d = skeleton.joints[0].b * skeleton.joints[0].t;
 	skeleton.joints[0].position = glm::vec3(skeleton.joints[0].d * glm::vec4(0,0,0,1));
-	
+
 	for (int i = 1; i < getNumberOfBones(); ++i) {
 		skeleton.joints[i].t = glm::toMat4(k.rel_rot[i]);
 		skeleton.joints[i].d = skeleton.joints[skeleton.joints[i].parent_index].d * skeleton.joints[i].b * skeleton.joints[i].t;

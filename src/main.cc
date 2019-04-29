@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -271,8 +272,8 @@ int main(int argc, char* argv[])
 	std::function<glm::vec3()> cam_data = [&gui](){ return gui.getCamera(); };
 	std::function<glm::vec4()> lp_data = [&gui]() { return gui.getLightPosition(); };
 	std::function<glm::vec4()> lc_data = [&gui]() { return gui.getLightColor(); };
-	
-	
+
+
 	auto std_model = std::make_shared<ShaderUniform<const glm::mat4*>>("model", model_data);
 	auto floor_model = make_uniform("model", identity_mat);
 	auto std_view = make_uniform("view", view_data);
@@ -298,7 +299,7 @@ int main(int argc, char* argv[])
 	// FIXME: define more ShaderUniforms for RenderPass if you want to use it.
 	//        Otherwise, do whatever you like here
 	std::function<glm::mat4()> bone_transform = [&gui](){ return gui.boneTransform(); };
-	
+
 	auto bone_trans = make_uniform("bone_transform", bone_transform);
 
 	std::function<glm::mat4()> light_transform = [&gui](){ return gui.lightTransform(); };
@@ -416,7 +417,7 @@ int main(int argc, char* argv[])
 		{ "fragment_color" }
 		);
 
-	
+
 	//QUAD SETUP
 	GLuint quad_vertex_shader_id = 0;
 	CHECK_GL_ERROR(quad_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
@@ -433,9 +434,9 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glGenVertexArrays(kNumVaos, &g_array_objects[0]));
 	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kQuadVao]));
 
-	
+
 	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kQuadVao][0]));
-	
+
 	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kQuadVao][kVertexBuffer]));
 	// NOTE: We do not send anything right now, we just describe it to OpenGL.
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
@@ -504,7 +505,7 @@ int main(int argc, char* argv[])
 				select_indices.data(), GL_STATIC_DRAW));
 
 	GLuint select_program_id = 0;
-	
+
 	GLint select_ortho_location = 0;
 	GLint select_offset_location = 0;
 	GLint select_cursor_location = 0;
@@ -560,7 +561,7 @@ int main(int argc, char* argv[])
 				light_faces.data(), GL_STATIC_DRAW));
 
 	GLuint light_program_id = 0;
-	
+
 	GLint light_projection_location = 0;
 	GLint light_view_location = 0;
 	GLint light_offset_location = 0;
@@ -600,7 +601,7 @@ int main(int argc, char* argv[])
 	bool draw_object = true;
 	bool draw_cylinder = true;
 
-	
+
 	if (argc >= 3) {
 		mesh.loadAnimationFrom(argv[2]);
 		gui.getAnimationState()->end_keyframe = mesh.skeleton.keyframes.size()-1;
@@ -632,9 +633,9 @@ int main(int argc, char* argv[])
 			GLuint renderedTexture;
 			glGenTextures(1, &renderedTexture);
 			glBindTexture(GL_TEXTURE_2D, renderedTexture);
-			
+
 			gui.addTexture(renderedTexture);
-			
+
 			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -665,7 +666,7 @@ int main(int argc, char* argv[])
 				CHECK_GL_ERROR(glDrawElements(GL_LINES,
 											bone_indices.size() * 2,
 											GL_UNSIGNED_INT, 0));
-			
+
 			}
 			draw_cylinder = (current_bone != -1 && gui.isTransparent());
 			if (draw_cylinder) {
@@ -699,7 +700,7 @@ int main(int argc, char* argv[])
 
 			glBindFramebuffer(GL_FRAMEBUFFER,0);
 			glClear(GL_COLOR_BUFFER_BIT);
-		}	
+		}
 		if(mesh.skeleton.keyframes.size() > 0){
 			mesh.changeSkeleton(mesh.skeleton.keyframes[0]);
 			mesh.updateAnimation();
@@ -723,6 +724,7 @@ int main(int argc, char* argv[])
 
 		gui.updateMatrices();
 		mats = gui.getMatrixPointers();
+		cout<<"used eye "<<glm::to_string(gui.getView())<<endl;
 #if 0
 		std::cerr << model_data() << '\n';
 		std::cerr << "call from outside: " << std_model->data_source() << "\n";
@@ -759,9 +761,9 @@ int main(int argc, char* argv[])
 			GLuint renderedTexture;
 			glGenTextures(1, &renderedTexture);
 			glBindTexture(GL_TEXTURE_2D, renderedTexture);
-			
+
 			gui.addTexture(renderedTexture);
-			
+
 			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -827,13 +829,13 @@ int main(int argc, char* argv[])
 			glClear(GL_COLOR_BUFFER_BIT);
 			gui.resetTexture();
 
-			
+
 		}
 
 		int current_bone = gui.getCurrentBone();
 
 
-	
+
 		// Draw bones first.
 		if (draw_skeleton && gui.isTransparent()) {
 			bone_pass.setup();
@@ -927,7 +929,7 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(	glUniform2fv(select_offset_location, 1, &offset[0]));
 			CHECK_GL_ERROR(	glUniform1i(select_cursor_location, gui.getCursor() ));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, select_indices.size() * 3, GL_UNSIGNED_INT, 0));
-	
+
 		}
 		glViewport(0, 0, main_view_width, main_view_height);
 
