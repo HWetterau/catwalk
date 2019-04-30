@@ -81,6 +81,7 @@ struct KeyFrame {
 	                        float tau,
 	                        KeyFrame& target) {
 		for(int i = 0; i < (int)from.rel_rot.size(); ++i){
+			//CHANGE ME
 			target.rel_rot.push_back(glm::slerp(from.rel_rot[i], to.rel_rot[i], tau));
 		}
 		target.light_pos = glm::mix(from.light_pos, to.light_pos, tau);
