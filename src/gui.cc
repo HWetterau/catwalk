@@ -398,7 +398,6 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 glm::mat4 GUI::boneTransform(){
 	Joint j = mesh_->skeleton.joints[current_bone_];
 	glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
-	// glm::vec3 tangent = glm::normalize( j.position - parentpos);
 	glm::vec3 tangent = glm::normalize( j.init_rel_position);
 		glm::vec3 n;
 		if(tangent[0] <= tangent[1] && tangent[0] <= tangent[2]){
@@ -413,10 +412,7 @@ glm::mat4 GUI::boneTransform(){
 		double height = glm::distance(glm::vec3(0),j.init_rel_position);
 		glm::vec3 pos = (parentpos + j.position) * glm::vec3(.5, .5, .5);
 		glm::mat4 scale = glm::mat4(kCylinderRadius, 0, 0, 0, 0, height, 0, 0, 0, 0, kCylinderRadius, 0, 0, 0, 0, 1);
-		//cout<<"height "<<height<<endl;
-		// glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(parentpos,1)));
 		glm::mat4 toworld = (glm::mat4(glm::vec4(normal,0),glm::vec4(tangent,0),glm::vec4(bitan,0),glm::vec4(0,0,0,1)));
-		//return toworld * scale;
 		return mesh_->skeleton.joints[j.parent_index].d * toworld *  scale;
 }
 
@@ -453,7 +449,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 				glm::vec3(mouse_direction.y, -mouse_direction.x, 0.0f)
 				);
 		glm::mat4 rot =	glm::rotate(rotation_speed_, axis);	
-		//rel_rot = rot * rel_rot;  //questionable order
 		orientation_ =
 			glm::mat3(rot * glm::mat4(orientation_));
 		tangent_ = glm::column(orientation_, 0);
@@ -531,15 +526,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 				break;
 		}
 	}
-	// else if(on_light_ && drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT) {
-	// 		glm::mat4 t = glm::mat4(1.0);
-	// 		t[3][0] = delta_x;
-	// 		t[3][1] = delta_y; //translation in screen space
-	// 		//t = glm::inverse(projection_matrix_ * view_matrix_) * t;
-	// 		light_position_ = glm::inverse(glm::mat4(orientation_)) * t * light_position_ ;
-	// 		cout << "orientation " << glm::to_string(glm::mat4(orientation_)) << endl;
-	// 		cout << " CHANGED light pos " << glm::to_string(light_position_) << endl;
-	// }
 
 	// FIXME: highlight bones that have been moused over
 	//go from screen coords to ndc (divide by width, multiply by 2 and subtract 1)
@@ -644,10 +630,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	}
 
 	current_bone_ = min_bone;
-
-	//current_bone_ = 1;
-
-
 }
 
 void GUI::mouseButtonCallback(int button, int action, int mods)
@@ -664,14 +646,9 @@ void GUI::mouseButtonCallback(int button, int action, int mods)
 			if (temp < getNumKeyframes()) {
 				selected_frame = temp;
 			}
-			
-			//cout<<"index "<<floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset)<<endl;
 		}
-		
-
 	}
 	
-
 }
 
 void GUI::mouseScrollCallback(double dx, double dy)
@@ -679,7 +656,6 @@ void GUI::mouseScrollCallback(double dx, double dy)
 	if (current_x_ < view_width_)
 		return;
 	// FIXME: Mouse Scrolling
-	//cout<<"dy "<<dy<<endl;
 	if(scroll_offset >= 0 && dy > 0)
 		return;
 	//limit downward scrolling
@@ -695,9 +671,8 @@ void GUI::updateMatrices()
 		center_ = eye_ + camera_distance_ * look_;
 	else
 		eye_ = center_ - camera_distance_ * look_;
-
 	view_matrix_ = glm::lookAt(eye_, center_, up_);
-	//light_position_ = glm::vec4(eye_, 1.0f);
+
 
 	aspect_ = static_cast<float>(view_width_) / view_height_;
 	projection_matrix_ =
@@ -746,45 +721,44 @@ bool GUI::captureWASDUPDOWN(int key, int action)
 		else{
 			camera_distance_ -= zoom_speed_;
 		}
-		rel_pos += zoom_speed_ * look_;
+		//rel_pos += zoom_speed_ * look_;
 		return true;
 	} else if (key == GLFW_KEY_S) {
 		if (fps_mode_){
 			eye_ -= zoom_speed_ * look_;
-			//rel_pos -= zoom_speed_ * look_;
 		}
 		else{
 			camera_distance_ += zoom_speed_;
 		}
-		rel_pos -= zoom_speed_ * look_;
+		//rel_pos -= zoom_speed_ * look_;
 		return true;
 	} else if (key == GLFW_KEY_A) {
 		if (fps_mode_)
 			eye_ -= pan_speed_ * tangent_;
 		else
 			center_ -= pan_speed_ * tangent_;
-		rel_pos -= pan_speed_ * tangent_;
+		//rel_pos -= pan_speed_ * tangent_;
 		return true;
 	} else if (key == GLFW_KEY_D) {
 		if (fps_mode_)
 			eye_ += pan_speed_ * tangent_;
 		else
 			center_ += pan_speed_ * tangent_;
-		rel_pos += pan_speed_ * tangent_;
+		//rel_pos += pan_speed_ * tangent_;
 		return true;
 	} else if (key == GLFW_KEY_DOWN) {
 		if (fps_mode_)
 			eye_ -= pan_speed_ * up_;
 		else
 			center_ -= pan_speed_ * up_;
-		rel_pos -= pan_speed_ * up_;
+		//rel_pos -= pan_speed_ * up_;
 		return true;
 	} else if (key == GLFW_KEY_UP) {
 		if (fps_mode_)
 			eye_ += pan_speed_ * up_;
 		else
 			center_ += pan_speed_ * up_;
-		rel_pos += pan_speed_ * up_;
+		//rel_pos += pan_speed_ * up_;
 		return true;
 	}
 	return false;

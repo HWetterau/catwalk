@@ -85,27 +85,18 @@ public:
 
 	glm::mat4 getProjection() const { return projection_matrix_; }
 	const float* getView() const { return &view_matrix_[0][0]; }
+	void printDistance () const {	cout<<"print Distance: eye "<<glm::to_string(eye_)<<" camera distance "<<camera_distance_<<endl;}
 
 	glm::mat4 lightTransform();
 	void changeCamera(glm::vec3 eye, glm::mat3 rot, float camera_dist) {
-		//cout <<"eye "<<glm::to_string(eye)<<" eye_ "<<glm::to_string(eye_)<<endl;
-		cout<<"changeCamera eye "<<glm::to_string(eye_)<<endl;
-		//cout << "center " << glm::to_string(center_) << endl;
-		//cout << "old up " << glm::to_string(up_) << endl;
-		//rel_rot = glm::mat4_cast(rot);
 		eye_= eye;
-		//eye_ = center_ - camera_dist * look_;
-		// orientation_ = glm::mat3(rel_rot * glm::mat4(start_orientation_));
 		orientation_ = rot;
 		tangent_ = glm::column(orientation_, 0);
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
-		//cout<<"orientation transpose "<<glm::to_string(orientation_*glm::transpose(orientation_))<<endl;
-		//cout << "up " << glm::to_string(up_) << endl;
 		center_ = eye_ + camera_distance_ * look_;
-		//cout << "center " << glm::to_string(center_) << endl;
+		
 		view_matrix_ = glm::lookAt(eye_, center_, up_);
-		//camera_distance_ = camera_dist;
 	 }
 	glm::vec4 getLightPosition() {return light_position_;}
 	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}
@@ -145,7 +136,7 @@ private:
 	bool save_screen_ = false;
 
 	glm::vec3 eye_ = glm::vec3(0.0f, 0.1f, camera_distance_);
-	glm::vec3 rel_pos = eye_;
+	//glm::vec3 rel_pos = eye_;
 	glm::vec3 up_ = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 look_ = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 tangent_ = glm::cross(look_, up_);
@@ -154,7 +145,6 @@ private:
 	glm::mat3 start_orientation_ = glm::mat3(tangent_, up_, look_);
 	glm::vec4 light_position_ = glm::vec4(0.0f, 50.0f, 0.0f, 1.0f);
 	glm::vec4 light_color_= glm::vec4(1,1,1,1);
-	glm::mat4 rel_rot = glm::mat4(1.0);
 
 	glm::mat4 view_matrix_ = glm::lookAt(eye_, center_, up_);
 	glm::mat4 projection_matrix_;

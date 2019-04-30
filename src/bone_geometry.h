@@ -8,6 +8,7 @@
 #include <limits>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <mmdadapter.h>
 #include <iostream>
 #include <chrono>
@@ -65,7 +66,6 @@ struct Configuration {
 
 
 
-
 struct KeyFrame {
 	// coming from the skeleton, from jointRot()
 	std::vector<glm::fquat> rel_rot;
@@ -76,13 +76,41 @@ struct KeyFrame {
 	glm::vec4 light_color;
 	float camera_dist;
 
+	static glm::fquat doub(glm::fquat p, glm::fquat q){
+		glm::fquat temp = ((p*q)+(p*q))*q;
+		for(int i = 0; i < 4; i++){
+			temp[i] -= p[i]; //subtract p
+		}
+		return glm::normalize(temp);
+	}
+	static glm::fquat myBisect(glm::fquat p, glm::fquat q){
+		return (p+q)/ glm::length(p+q);
+	}
+	static bool quatEquals(glm::fquat a, glm::fquat b){
+		//return (a[0]==b[0] && a[1]==b[1] && a[2] == b[2] && a[3]==b[3]);
+		return abs(glm::dot(a,b)) > 1- 0.0001;
+	}
+	static glm::fquat boneSquad(glm::fquat prev, glm::fquat cur, glm::fquat next, float tau){
+		//glm::fquat a = myBisect(doub(prev,cur),next);
+		//glm::fquat b = doub(a,cur);
+		if( quatEquals(prev,next) || quatEquals(prev,cur)){
+			return prev;
+		}
+
+		 glm::fquat a = glm::intermediate(prev,cur,next);
+		 glm::fquat b = glm::intermediate(a,cur,next);
+		return glm::squad(prev,cur,a,b, tau);
+
+}
 	static void interpolate(const KeyFrame& from,
-	                        const KeyFrame& to,
+	                        const KeyFrame& to, const KeyFrame& next,
 	                        float tau,
 	                        KeyFrame& target) {
 		for(int i = 0; i < (int)from.rel_rot.size(); ++i){
 			//CHANGE ME
-			target.rel_rot.push_back(glm::slerp(from.rel_rot[i], to.rel_rot[i], tau));
+			//target.rel_rot.push_back(glm::slerp(from.rel_rot[i], to.rel_rot[i], tau));
+			glm::fquat cur = glm::slerp(from.rel_rot[i], to.rel_rot[i], tau);
+			target.rel_rot.push_back(boneSquad(from.rel_rot[i],cur,to.rel_rot[i], tau));
 		}
 		target.light_pos = glm::mix(from.light_pos, to.light_pos, tau);
 		target.camera_pos = glm::mix(from.camera_pos, to.camera_pos,tau);

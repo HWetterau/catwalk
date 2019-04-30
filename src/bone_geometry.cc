@@ -159,6 +159,8 @@ glm::mat3 Mesh::cameraRotSpline(float t){
 	//return glm::squad(skeleton.keyframes[cp0].camera_rot, skeleton.keyframes[cp3].camera_rot, skeleton.keyframes[cp1].camera_rot, skeleton.keyframes[cp2].camera_rot,  local_t);
 }
 
+
+
 void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 {	// FIXME: Support Animation Here
 	if (t != -1) {
@@ -188,7 +190,14 @@ void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 		float interp = fps * (a->current_time - a->old_time);
 		KeyFrame result;
 		if (interpolate){
- 			KeyFrame::interpolate(skeleton.keyframes[a->current_keyframe], skeleton.keyframes[a->next_keyframe], interp, result);
+			int cp1 = glm::clamp<int>(a->current_keyframe, 0, skeleton.keyframes.size() - 1);
+			int cp2 = glm::clamp<int>(a->next_keyframe, 0, skeleton.keyframes.size() - 1);
+			int cp3 = glm::clamp<int>(a->next_keyframe +1, 0, skeleton.keyframes.size() - 1);
+			//if(cp3 !=cp2){
+ 				KeyFrame::interpolate(skeleton.keyframes[cp1], skeleton.keyframes[cp2], skeleton.keyframes[cp3], interp, result);
+		//	} else{
+				//result = skeleton.keyframes[a->current_keyframe];
+		//	}
 			lc.camera_pos = cameraPosSpline(t);
 			lc.light_pos = glm::vec4(lightSpline(t),1);
 			lc.camera_rot = cameraRotSpline(t);

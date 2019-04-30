@@ -725,6 +725,7 @@ int main(int argc, char* argv[])
 		gui.updateMatrices();
 		mats = gui.getMatrixPointers();
 		//cout<<"used eye "<<glm::to_string(gui.getView())<<endl;
+	
 #if 0
 		std::cerr << model_data() << '\n';
 		std::cerr << "call from outside: " << std_model->data_source() << "\n";
@@ -740,6 +741,7 @@ int main(int argc, char* argv[])
 			      << cur_time << " sec";
 			glfwSetWindowTitle(window, title.str().data());
 			//pass in animation state to updateAnimation
+			//im sorry
 			LightCam lc;
 			mesh.updateAnimation(cur_time, gui.getAnimationState(),lc);
 			gui.setLightPosition(lc.light_pos);
@@ -885,7 +887,7 @@ int main(int argc, char* argv[])
 			                              floor_faces.size() * 3,
 			                              GL_UNSIGNED_INT, 0));
 		}
-
+	
 		//Draw the model
 		if (draw_object) {
 			object_pass.setup();
