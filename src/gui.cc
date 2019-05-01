@@ -528,8 +528,8 @@ void GUI::updateScene(float t){
 			}
 			float interp = fps * (sceneState->current_time - sceneState->old_time);
 			if (interpolate){
-				light_position_ = glm::vec4(lightSpline(sceneState->current_light_keyframe, t),1);
-				light_color_ = glm::mix(lightKeyframes[sceneState->current_light_keyframe].light_color,lightKeyframes[sceneState->next_light_keyframe].light_color,t);	
+				light_position_ = glm::vec4(lightSpline(sceneState->current_light_keyframe, interp),1);
+				light_color_ = glm::mix(lightKeyframes[sceneState->current_light_keyframe].light_color,lightKeyframes[sceneState->next_light_keyframe].light_color,interp);	
 			}
 		}
 		if(cameraKeyframes.size()>0){
@@ -557,9 +557,9 @@ void GUI::updateScene(float t){
 			}
 			float interp = fps * (sceneState->current_time - sceneState->old_time2);
 			if (interpolate){
-				glm::vec3 temp_eye = cameraPosSpline(sceneState->current_camera_keyframe, t);
-				float camera_dist = glm::mix(cameraKeyframes[sceneState->current_camera_keyframe].camera_dist, cameraKeyframes[sceneState->next_camera_keyframe].camera_dist,t);
-				glm::mat3 temp_rot = cameraRotSpline(sceneState->current_camera_keyframe, t);	
+				glm::vec3 temp_eye = cameraPosSpline(sceneState->current_camera_keyframe, interp);
+				float camera_dist = glm::mix(cameraKeyframes[sceneState->current_camera_keyframe].camera_dist, cameraKeyframes[sceneState->next_camera_keyframe].camera_dist,interp);
+				glm::mat3 temp_rot = cameraRotSpline(sceneState->current_camera_keyframe, interp);	
 				changeCamera(temp_eye,temp_rot,camera_dist);
 			}
 		}
