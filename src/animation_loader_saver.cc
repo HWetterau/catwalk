@@ -35,13 +35,13 @@ void Mesh::saveAnimationTo(const std::string& fn)
 			js["keyframe" + to_string(i)] += {current_quat[0], current_quat[1], current_quat[2], current_quat[3]};
 
 		}
-		js["light_pos" + to_string(i)] = {current_keyframe.light_pos[0], current_keyframe.light_pos[1], current_keyframe.light_pos[2], current_keyframe.light_pos[3]};
-		js["camera_pos" + to_string(i)] = {current_keyframe.camera_pos[0], current_keyframe.camera_pos[1], current_keyframe.camera_pos[2]};
-		js["camera_rot" + to_string(i)] = {current_keyframe.camera_rot[0][0], current_keyframe.camera_rot[0][1], current_keyframe.camera_rot[0][2],
-										  current_keyframe.camera_rot[1][0], current_keyframe.camera_rot[1][1], current_keyframe.camera_rot[1][2],
-										  current_keyframe.camera_rot[2][0], current_keyframe.camera_rot[2][1], current_keyframe.camera_rot[2][2]
-										 };
-		js["light_color" + to_string(i)] = {current_keyframe.light_color[0], current_keyframe.light_color[1], current_keyframe.light_color[2], current_keyframe.light_color[3]};
+		// js["light_pos" + to_string(i)] = {current_keyframe.light_pos[0], current_keyframe.light_pos[1], current_keyframe.light_pos[2], current_keyframe.light_pos[3]};
+		// js["camera_pos" + to_string(i)] = {current_keyframe.camera_pos[0], current_keyframe.camera_pos[1], current_keyframe.camera_pos[2]};
+		// js["camera_rot" + to_string(i)] = {current_keyframe.camera_rot[0][0], current_keyframe.camera_rot[0][1], current_keyframe.camera_rot[0][2],
+		// 								  current_keyframe.camera_rot[1][0], current_keyframe.camera_rot[1][1], current_keyframe.camera_rot[1][2],
+		// 								  current_keyframe.camera_rot[2][0], current_keyframe.camera_rot[2][1], current_keyframe.camera_rot[2][2]
+		// 								 };
+		// js["light_color" + to_string(i)] = {current_keyframe.light_color[0], current_keyframe.light_color[1], current_keyframe.light_color[2], current_keyframe.light_color[3]};
 	}
 	ofstream file(fn);
 	file << js;
@@ -57,14 +57,14 @@ void Mesh::loadAnimationFrom(const std::string& fn)
 
 	for (int i = 0; i < num_keyframes; ++i) {
 		KeyFrame k;
-		json light = j["light_pos"+to_string(i)];
-		k.light_pos = glm::vec4(light[0], light[1], light[2], light[3]);
-		json camera = j["camera_pos"+to_string(i)];
-		k.camera_pos = glm::vec3(camera[0], camera[1], camera[2]);
-		json rot = j["camera_rot"+to_string(i)];
-		k.camera_rot = glm::mat3(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
-		json color = j["light_color"+to_string(i)];
-		k.light_color = glm::vec4(color[0], color[1], color[2], color[3]);
+		// json light = j["light_pos"+to_string(i)];
+		// k.light_pos = glm::vec4(light[0], light[1], light[2], light[3]);
+		// json camera = j["camera_pos"+to_string(i)];
+		// k.camera_pos = glm::vec3(camera[0], camera[1], camera[2]);
+		// json rot = j["camera_rot"+to_string(i)];
+		// k.camera_rot = glm::mat3(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		// json color = j["light_color"+to_string(i)];
+		// k.light_color = glm::vec4(color[0], color[1], color[2], color[3]);
 		for (int bone = 0; bone < num_bones; ++bone){
 			json arr = j["keyframe"+to_string(i)][bone];
 			glm::fquat quat;
@@ -74,8 +74,6 @@ void Mesh::loadAnimationFrom(const std::string& fn)
 			quat[3] = arr[3];
 			k.rel_rot.push_back(quat);
 		}
-		// json temp = j["keyframe"+to_string(i)];
-		// k.light_pos = glm::vec4(temp[4], temp[5], temp[6], temp[7]);
 		skeleton.keyframes.push_back(k);
 
 	}

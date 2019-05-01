@@ -6,6 +6,8 @@
 #include <GLFW/glfw3.h>
 #include "bone_geometry.h"
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/spline.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <iostream>
@@ -88,6 +90,7 @@ public:
 	void printDistance () const {	cout<<"print Distance: eye "<<glm::to_string(eye_)<<" camera distance "<<camera_distance_<<endl;}
 
 	glm::mat4 lightTransform();
+
 	void changeCamera(glm::vec3 eye, glm::mat3 rot, float camera_dist) {
 		eye_= eye;
 		orientation_ = rot;
@@ -98,9 +101,16 @@ public:
 		
 		view_matrix_ = glm::lookAt(eye_, center_, up_);
 	 }
+
+	glm::vec3 lightSpline(int curframe, float t);
+	glm::vec3 cameraPosSpline(int curframe,float t);
+	glm::mat3 cameraRotSpline(int curframe, float t);
+	void updateScene(float t);
+
 	glm::vec4 getLightPosition() {return light_position_;}
 	void setLightPosition(glm::vec4 lightpos) {light_position_ = lightpos ;}
 	bool getOnLight(){return on_light_;}
+
 
 	glm::vec4 getLightColor(){return light_color_;}
 	void setLightColor(glm::vec4 color){ light_color_ = color;}
@@ -109,6 +119,33 @@ public:
 	enum {x_axis,z_axis,y_axis, none};
 	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
 
+	struct SceneState{
+		int current_light_keyframe;
+		int next_light_keyframe;
+		int end_light_keyframe;
+
+		int current_camera_keyframe;
+		int next_camera_keyframe;
+		int end_camera_keyframe;
+
+		float current_time;
+		float old_time;
+		float old_time2;
+
+		SceneState(): current_light_keyframe(0), next_light_keyframe(1), current_camera_keyframe(0), next_camera_keyframe(1) {}
+
+	};
+	struct LightKeyFrame {
+		glm::vec4 light_pos;
+		glm::vec4 light_color;
+	};
+
+	struct CameraKeyFrame {
+		glm::vec3 camera_pos;
+		glm::mat3 camera_rot;
+		float camera_dist;
+
+	};
 
 private:
 	GLFWwindow* window_;
@@ -136,7 +173,6 @@ private:
 	bool save_screen_ = false;
 
 	glm::vec3 eye_ = glm::vec3(0.0f, 0.1f, camera_distance_);
-	//glm::vec3 rel_pos = eye_;
 	glm::vec3 up_ = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 look_ = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 tangent_ = glm::cross(look_, up_);
@@ -157,7 +193,7 @@ private:
 	bool play_ = false;
 
 	//store keyframes in gui?
-
+	SceneState* sceneState;
 	AnimationState* state;
 	chrono::time_point<chrono::steady_clock> play_start;
 	float pause_time = 0;
@@ -169,6 +205,8 @@ private:
 	bool cursor = false;
 	int color = WHITE;
 	double intensity_ = 1.0;
+	vector<LightKeyFrame> lightKeyframes;
+	vector<CameraKeyFrame> cameraKeyframes;
 };
 
 #endif

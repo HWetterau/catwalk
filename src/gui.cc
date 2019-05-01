@@ -187,6 +187,9 @@ GUI::GUI(GLFWwindow* window, int view_width, int view_height, int preview_height
 	float aspect_ = static_cast<float>(view_width_) / view_height_;
 	projection_matrix_ = glm::perspective((float)(kFov * (M_PI / 180.0f)), aspect_, kNear, kFar);
 	state = new AnimationState();
+	sceneState = new SceneState();
+	// lightKeyframes = vector<LightKeyFrame>();
+	// cameraKeyframes = vector<CameraKeyFrame>();
 }
 
 GUI::~GUI()
@@ -283,14 +286,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
 			k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
 		}
-		k.light_pos = light_position_;
-		k.camera_pos = eye_;
-		//k.camera_pos = rel_pos;
-		cout<<"save eye_ "<<glm::to_string(eye_)<<endl;
-		k.camera_rot = orientation_;
-		k.light_color = light_color_;
-		k.camera_dist = camera_distance_;
-
+		
 		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
 			//insert before
 			mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + selected_frame, k);
@@ -300,7 +296,23 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
 		save_texture_ = true;
 
-	} else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
+	}else if (key == GLFW_KEY_L && action == GLFW_RELEASE) {
+		LightKeyFrame lk;
+		lk.light_pos = light_position_;
+		lk.light_color = light_color_;
+		lightKeyframes.push_back(lk);
+		sceneState->end_light_keyframe = lightKeyframes.size() - 1;
+	
+	}else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
+		CameraKeyFrame ck;
+		ck.camera_pos = eye_;
+		ck.camera_rot = orientation_;
+		ck.camera_dist = camera_distance_;
+		cameraKeyframes.push_back(ck);
+		cout << "size after " << cameraKeyframes.size() << endl;
+		sceneState->end_camera_keyframe = cameraKeyframes.size() - 1;
+	
+	}else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		//either play/pause animation
 		// cout << "state current frame " << state.current_keyframe << endl;
 		play_ = !play_;
@@ -310,6 +322,8 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		play_start = chrono::steady_clock::now();
 
 		state->old_time = 0;
+		sceneState->old_time = 0;
+		sceneState->old_time2 = 0;
 
 	} else if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
 		//rewind animation
@@ -317,6 +331,17 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		state->current_keyframe = 0;
 		state->next_keyframe = 1;
 		state->old_time = 0;
+
+		sceneState->current_time = 0;
+		
+		sceneState->current_light_keyframe = 0;
+		sceneState->next_light_keyframe = 1;
+		sceneState->old_time = 0;
+
+		sceneState->current_camera_keyframe = 0;
+		sceneState->next_camera_keyframe = 1;
+		sceneState->old_time2 = 0;
+
 		pause_time = 0;
 		play_start = chrono::steady_clock::now();
 
@@ -335,12 +360,12 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
 				k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
 			}
-			k.light_pos = light_position_;
-			k.camera_pos = eye_;
+			//k.light_pos = light_position_;
+			//k.camera_pos = eye_;
 			//k.camera_pos = rel_pos;
-			k.camera_rot = orientation_;
-			k.light_color = light_color_;
-			k.camera_dist = camera_distance_;
+			// k.camera_rot = orientation_;
+			// k.light_color = light_color_;
+			// k.camera_dist = camera_distance_;
 			mesh_->skeleton.keyframes[selected_frame] = k;
 			replace_texture = selected_frame;
 			save_texture_ = true;
@@ -353,9 +378,6 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		}
 		if(selected_frame != -1){
 			mesh_->changeSkeleton(mesh_->skeleton.keyframes[selected_frame]);
-			changeCamera(mesh_->skeleton.keyframes[selected_frame].camera_pos,mesh_->skeleton.keyframes[selected_frame].camera_rot,
-						 mesh_->skeleton.keyframes[selected_frame].camera_dist);
-			light_position_=mesh_->skeleton.keyframes[selected_frame].light_pos;
 			pose_changed_ = true;
 		}
 	} else if (key == GLFW_KEY_DELETE && action == GLFW_RELEASE) {
@@ -420,6 +442,128 @@ glm::mat4 GUI::lightTransform(){
 	glm::mat4 trans = glm::mat4(1.0);
 	return glm::translate(trans,glm::vec3(light_position_));
 	
+}
+
+glm::vec3 GUI::lightSpline(int curframe, float t){
+	int cp0 = glm::clamp<int>(curframe - 1, 0, lightKeyframes.size() - 1);
+    int cp1 = glm::clamp<int>(curframe,     0, lightKeyframes.size()- 1);
+    int cp2 = glm::clamp<int>(curframe + 1, 0, lightKeyframes.size() - 1);
+    int cp3 = glm::clamp<int>(curframe + 2, 0, lightKeyframes.size() - 1);
+	float local_t = glm::fract(t);
+	return glm::catmullRom(lightKeyframes[cp0].light_pos, lightKeyframes[cp1].light_pos, lightKeyframes[cp2].light_pos, lightKeyframes[cp3].light_pos, local_t);
+}
+glm::vec3 GUI::cameraPosSpline(int curframe,float t){
+	int cp0 = glm::clamp<int>(curframe - 1, 0, cameraKeyframes.size() - 1);
+    int cp1 = glm::clamp<int>(curframe,     0, cameraKeyframes.size() - 1);
+    int cp2 = glm::clamp<int>(curframe + 1, 0, cameraKeyframes.size() - 1);
+    int cp3 = glm::clamp<int>(curframe + 2, 0, cameraKeyframes.size() - 1);
+	float local_t = glm::fract(t);
+	return glm::catmullRom(cameraKeyframes[cp0].camera_pos, cameraKeyframes[cp1].camera_pos, cameraKeyframes[cp2].camera_pos, cameraKeyframes[cp3].camera_pos, local_t);
+}
+
+glm::mat3 GUI::cameraRotSpline(int curframe, float t){
+	int cp0 = glm::clamp<int>(curframe - 1, 0, cameraKeyframes.size() - 1);
+    int cp1 = glm::clamp<int>(curframe,     0, cameraKeyframes.size() - 1);
+    int cp2 = glm::clamp<int>(curframe + 1, 0, cameraKeyframes.size() - 1);
+    int cp3 = glm::clamp<int>(curframe + 2, 0, cameraKeyframes.size() - 1);
+	float local_t = glm::fract(t);
+
+	glm::mat3 m1 = cameraKeyframes[cp0].camera_rot;
+	glm::mat3 m2 = cameraKeyframes[cp1].camera_rot;
+	glm::mat3 m3 = cameraKeyframes[cp2].camera_rot;
+	glm::mat3 m4 = cameraKeyframes[cp3].camera_rot;
+
+	// glm::fquat prev = glm::quat_cast(cameraKeyframes[cp1].camera_rot);
+	// glm::fquat next = glm::quat_cast(cameraKeyframes[cp2].camera_rot);
+
+	// glm::fquat cur = glm::slerp(prev, next, t);
+
+	// glm::fquat a = glm::intermediate(prev,cur,next);
+	// glm::fquat b = glm::intermediate(a,cur,next);
+
+
+	glm::mat3 result = glm::mat3(1.0);
+
+	//cout << "m1 " << glm::to_string(m1) << endl;
+	result[1] = glm::normalize(glm::catmullRom(glm::column(m1, 1), glm::column(m2, 1), glm::column(m3, 1), glm::column(m4, 1), local_t));
+	glm::vec3 temp = glm::normalize(glm::catmullRom(glm::column(m1, 2), glm::column(m2, 2), glm::column(m3, 2), glm::column(m4, 2), local_t));
+
+	temp-= glm::dot(temp, glm::column(result, 1))*glm::column(result, 1);
+	temp = glm::normalize(temp);
+	result[2] = temp;
+
+	result[0] = glm::normalize(glm::cross(glm::column(result, 1), glm::column(result, 2)));
+
+	return result;
+	//return glm::squad(skeleton.keyframes[cp0].camera_rot, skeleton.keyframes[cp3].camera_rot, skeleton.keyframes[cp1].camera_rot, skeleton.keyframes[cp2].camera_rot,  local_t);
+	//return glm::toMat3(glm::squad(prev, next, a, b, t));
+	//return glm::toMat3(KeyFrame::boneSquad(prev, cur, next, local_t));
+}
+
+
+void GUI::updateScene(float t){
+	if (t != -1 ) {
+		if ( lightKeyframes.size()>0){
+			//LIGHT
+			sceneState->current_time = t;
+			float fps = 1.0;
+			bool interpolate = true;
+			int cur = sceneState->current_light_keyframe;
+
+			if ( cur == sceneState->end_light_keyframe){
+
+				interpolate = false;
+
+			} else if (sceneState->current_time - sceneState->old_time > (1/fps)) {
+
+				sceneState->old_time = sceneState->current_time;
+
+				if (sceneState->next_light_keyframe < sceneState->end_light_keyframe) {
+					sceneState->current_light_keyframe = sceneState->next_light_keyframe;
+					sceneState->next_light_keyframe++;
+					interpolate = true;
+				} else {
+					sceneState->current_light_keyframe = sceneState->next_light_keyframe;
+				}
+			}
+			float interp = fps * (sceneState->current_time - sceneState->old_time);
+			if (interpolate){
+				light_position_ = glm::vec4(lightSpline(sceneState->current_light_keyframe, t),1);
+				light_color_ = glm::mix(lightKeyframes[sceneState->current_light_keyframe].light_color,lightKeyframes[sceneState->next_light_keyframe].light_color,t);	
+			}
+		}
+		if(cameraKeyframes.size()>0){
+			//CAMERA
+			sceneState->current_time = t;
+			float fps = 1.0;
+			bool interpolate = true;
+			int cur = sceneState->current_camera_keyframe;
+			
+			if ( cur == sceneState->end_camera_keyframe){
+
+				interpolate = false;
+
+			} else if (sceneState->current_time - sceneState->old_time2 > (1/fps)) {
+
+				sceneState->old_time2 = sceneState->current_time;
+
+				if (sceneState->next_camera_keyframe < sceneState->end_camera_keyframe) {
+					sceneState->current_camera_keyframe = sceneState->next_camera_keyframe;
+					sceneState->next_camera_keyframe++;
+					interpolate = true;
+				} else {
+					sceneState->current_camera_keyframe = sceneState->next_camera_keyframe;
+				}
+			}
+			float interp = fps * (sceneState->current_time - sceneState->old_time2);
+			if (interpolate){
+				glm::vec3 temp_eye = cameraPosSpline(sceneState->current_camera_keyframe, t);
+				float camera_dist = glm::mix(cameraKeyframes[sceneState->current_camera_keyframe].camera_dist, cameraKeyframes[sceneState->next_camera_keyframe].camera_dist,t);
+				glm::mat3 temp_rot = cameraRotSpline(sceneState->current_camera_keyframe, t);	
+				changeCamera(temp_eye,temp_rot,camera_dist);
+			}
+		}
+	}
 }
 
 void GUI::mousePosCallback(double mouse_x, double mouse_y)

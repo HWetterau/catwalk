@@ -742,11 +742,10 @@ int main(int argc, char* argv[])
 			glfwSetWindowTitle(window, title.str().data());
 			//pass in animation state to updateAnimation
 			//im sorry
-			LightCam lc;
-			mesh.updateAnimation(cur_time, gui.getAnimationState(),lc);
-			gui.setLightPosition(lc.light_pos);
-			gui.setLightColor(lc.light_color);
-			gui.changeCamera(lc.camera_pos, lc.camera_rot, lc.camera_dist);
+
+			mesh.updateAnimation(cur_time, gui.getAnimationState());
+			gui.updateScene(cur_time);
+
 		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
 			gui.clearPose();

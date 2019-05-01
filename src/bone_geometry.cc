@@ -111,67 +111,20 @@ void Mesh::computeBounds()
 		bounds.max = glm::max(glm::vec3(vert), bounds.max);
 	}
 }
-glm::vec3 Mesh::lightSpline(float t){
-	int cp0 = glm::clamp<int>(t - 1, 0, skeleton.keyframes.size() - 1);
-    int cp1 = glm::clamp<int>(t,     0, skeleton.keyframes.size() - 1);
-    int cp2 = glm::clamp<int>(t + 1, 0, skeleton.keyframes.size() - 1);
-    int cp3 = glm::clamp<int>(t + 2, 0, skeleton.keyframes.size() - 1);
-	float local_t = glm::fract(t);
-	return glm::catmullRom(skeleton.keyframes[cp0].light_pos, skeleton.keyframes[cp1].light_pos, skeleton.keyframes[cp2].light_pos, skeleton.keyframes[cp3].light_pos, local_t);
-}
-
-glm::vec3 Mesh::cameraPosSpline(float t){
-	int cp0 = glm::clamp<int>(t - 1, 0, skeleton.keyframes.size() - 1);
-    int cp1 = glm::clamp<int>(t,     0, skeleton.keyframes.size() - 1);
-    int cp2 = glm::clamp<int>(t + 1, 0, skeleton.keyframes.size() - 1);
-    int cp3 = glm::clamp<int>(t + 2, 0, skeleton.keyframes.size() - 1);
-	float local_t = glm::fract(t);
-	return glm::catmullRom(skeleton.keyframes[cp0].camera_pos, skeleton.keyframes[cp1].camera_pos, skeleton.keyframes[cp2].camera_pos, skeleton.keyframes[cp3].camera_pos, local_t);
-}
-
-glm::mat3 Mesh::cameraRotSpline(float t){
-	int cp0 = glm::clamp<int>(t - 1, 0, skeleton.keyframes.size() - 1);
-    int cp1 = glm::clamp<int>(t,     0, skeleton.keyframes.size() - 1);
-    int cp2 = glm::clamp<int>(t + 1, 0, skeleton.keyframes.size() - 1);
-    int cp3 = glm::clamp<int>(t + 2, 0, skeleton.keyframes.size() - 1);
-	float local_t = glm::fract(t);
-
-	glm::mat3 m1 = skeleton.keyframes[cp0].camera_rot;
-	glm::mat3 m2 = skeleton.keyframes[cp1].camera_rot;
-	glm::mat3 m3 = skeleton.keyframes[cp2].camera_rot;
-	glm::mat3 m4 = skeleton.keyframes[cp3].camera_rot;
-
-	glm::mat3 result = glm::mat3(1.0);
-
-	//cout << "m1 " << glm::to_string(m1) << endl;
-	result[1] = glm::normalize(glm::catmullRom(glm::column(m1, 1), glm::column(m2, 1), glm::column(m3, 1), glm::column(m4, 1), local_t));
-	glm::vec3 temp = glm::normalize(glm::catmullRom(glm::column(m1, 2), glm::column(m2, 2), glm::column(m3, 2), glm::column(m4, 2), local_t));
-
-	temp-= glm::dot(temp, glm::column(result, 1))*glm::column(result, 1);
-	temp = glm::normalize(temp);
-	result[2] = temp;
-
-	result[0] = glm::normalize(glm::cross(glm::column(result, 1), glm::column(result, 2)));
-
-	//cout << "spline mat " << glm::to_string(result) << endl;
-
-	return result;
-	//return glm::squad(skeleton.keyframes[cp0].camera_rot, skeleton.keyframes[cp3].camera_rot, skeleton.keyframes[cp1].camera_rot, skeleton.keyframes[cp2].camera_rot,  local_t);
-}
 
 
 
-void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
+void Mesh::updateAnimation(float t, AnimationState* a)
 {	// FIXME: Support Animation Here
-	if (t != -1) {
+	if (t != -1 && skeleton.keyframes.size() > 0) {
+
 		a->current_time = t;
 		float fps = 1.0;
 		bool interpolate = true;
-		//bool test = false;
 		if (a->current_keyframe == a->end_keyframe){
-		//	if(test)
+	
 				interpolate = false;
-		//	test = true;
+
 		} else if (a->current_time - a->old_time > (1/fps)) {
 
 			a->old_time = a->current_time;
@@ -183,9 +136,7 @@ void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 
 			} else {
 				a->current_keyframe = a->next_keyframe;
-
 			}
-
 		}
 		float interp = fps * (a->current_time - a->old_time);
 		KeyFrame result;
@@ -193,29 +144,13 @@ void Mesh::updateAnimation(float t, AnimationState* a, LightCam& lc)
 			int cp1 = glm::clamp<int>(a->current_keyframe, 0, skeleton.keyframes.size() - 1);
 			int cp2 = glm::clamp<int>(a->next_keyframe, 0, skeleton.keyframes.size() - 1);
 			int cp3 = glm::clamp<int>(a->next_keyframe +1, 0, skeleton.keyframes.size() - 1);
-			//if(cp3 !=cp2){
- 				KeyFrame::interpolate(skeleton.keyframes[cp1], skeleton.keyframes[cp2], skeleton.keyframes[cp3], interp, result);
-		//	} else{
-				//result = skeleton.keyframes[a->current_keyframe];
-		//	}
-			lc.camera_pos = cameraPosSpline(t);
-			lc.light_pos = glm::vec4(lightSpline(t),1);
-			lc.camera_rot = cameraRotSpline(t);
-			//cout<<"light pos "<<glm::to_string(lc.light_pos)<<endl;
+
+ 			KeyFrame::interpolate(skeleton.keyframes[cp1], skeleton.keyframes[cp2], skeleton.keyframes[cp3], interp, result);
+
 		} else {
 			result = skeleton.keyframes[a->current_keyframe];
-			lc.light_pos = result.light_pos;
-			lc.camera_pos = result.camera_pos;
-			lc.camera_rot = result.camera_rot;
 		}
 		changeSkeleton(result);
-		//lc.light_pos = result.light_pos;
-		//lc.camera_pos = result.camera_pos;
-
-		//lc.camera_rot = result.camera_rot;
-	//	lc.camera_rot = skeleton.keyframes[0].camera_rot;
-		lc.camera_dist = result.camera_dist;
-		lc.light_color = result.light_color;
 	}
 
 	skeleton.refreshCache(&currentQ_);

@@ -65,16 +65,9 @@ struct Configuration {
 };
 
 
-
 struct KeyFrame {
 	// coming from the skeleton, from jointRot()
 	std::vector<glm::fquat> rel_rot;
-	glm::vec4 light_pos;
-	glm::vec3 camera_pos;
-	//if rotations dont work out use center and glm look at
-	glm::mat3 camera_rot;
-	glm::vec4 light_color;
-	float camera_dist;
 
 	static glm::fquat doub(glm::fquat p, glm::fquat q){
 		glm::fquat temp = ((p*q)+(p*q))*q;
@@ -112,24 +105,22 @@ struct KeyFrame {
 			glm::fquat cur = glm::slerp(from.rel_rot[i], to.rel_rot[i], tau);
 			target.rel_rot.push_back(boneSquad(from.rel_rot[i],cur,to.rel_rot[i], tau));
 		}
-		target.light_pos = glm::mix(from.light_pos, to.light_pos, tau);
-		target.camera_pos = glm::mix(from.camera_pos, to.camera_pos,tau);
-		target.camera_dist = glm::mix(from.camera_dist, to.camera_dist,tau);
+	
 		//target.camera_rot = glm::slerp(from.camera_rot, to.camera_rot, tau);
-		target.light_color = glm::mix(from.light_color,to.light_color,tau);
+		
 
 	}
 };
 
-struct LightCam {
-	glm::vec4 light_pos;
-	glm::vec3 camera_pos;
-	//if rotations dont work out use center and glm look at
-	glm::mat3 camera_rot;
-	glm::vec4 light_color;
-		float camera_dist;
+// struct LightCam {
+// 	glm::vec4 light_pos;
+// 	glm::vec3 camera_pos;
+// 	//if rotations dont work out use center and glm look at
+// 	glm::mat3 camera_rot;
+// 	glm::vec4 light_color;
+// 		float camera_dist;
 
-};
+// };
 
 
 struct AnimationState {
@@ -252,7 +243,7 @@ struct Mesh {
 	int getNumberOfBones() const;
 	glm::vec3 getCenter() const { return 0.5f * glm::vec3(bounds.min + bounds.max); }
 	const Configuration* getCurrentQ() const; // Configuration is abbreviated as Q
-	void updateAnimation(float t,  AnimationState* a, LightCam& lc);
+	void updateAnimation(float t,  AnimationState* a);
 	void updateAnimation();
 
 	void saveAnimationTo(const std::string& fn);
