@@ -13,5 +13,6 @@ void create_axes_mesh(LineMesh& axes_mesh);
 void create_light_axes_mesh(LineMesh& axes_mesh);
 void create_quad(std::vector<glm::vec4>& quad_vertices, std::vector<glm::uvec3>& quad_faces);
 void create_select(std::vector<glm::vec4>& select_vertices, std::vector<glm::uvec3>& select_indices);
+void create_scrub(std::vector<glm::vec4>& scrub_vertices, std::vector<glm::uvec3>& scrub_indices);
 
 #endif

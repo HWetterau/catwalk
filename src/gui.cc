@@ -165,10 +165,10 @@ bool intersectLocal(glm::dvec3 p, glm::dvec3 dir, double& t, double height){
 	}
 }
 
+//GUI gui(window, main_view_width, main_view_height, timeline_height, preview_height);
 
-
-GUI::GUI(GLFWwindow* window, int view_width, int view_height, int preview_height)
-	:window_(window), preview_height_(preview_height)
+GUI::GUI(GLFWwindow* window, int view_width, int view_height, int timeline_height, int preview_height)
+	:window_(window), preview_height_(preview_height), timeline_height_(timeline_height)
 {
 	glfwSetWindowUserPointer(window_, this);
 	glfwSetKeyCallback(window_, KeyCallback);
@@ -188,8 +188,8 @@ GUI::GUI(GLFWwindow* window, int view_width, int view_height, int preview_height
 	projection_matrix_ = glm::perspective((float)(kFov * (M_PI / 180.0f)), aspect_, kNear, kFar);
 	state = new AnimationState();
 	sceneState = new SceneState();
-	// lightKeyframes = vector<LightKeyFrame>();
-	// cameraKeyframes = vector<CameraKeyFrame>();
+
+	cout << "view width " << view_width_ << " view height " << view_height_ << endl;
 }
 
 GUI::~GUI()
@@ -572,6 +572,9 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	last_y_ = current_y_;
 	current_x_ = mouse_x;
 	current_y_ = window_height_ - mouse_y;
+	cout << "y " << current_y_ << endl;
+	cout << "window height " << window_height_ << endl;
+	cout << "view height " << view_height_ << endl;
 	float delta_x = current_x_ - last_x_;
 	float delta_y = current_y_ - last_y_;
 	if (sqrt(delta_x * delta_x + delta_y * delta_y) < 1e-15)
@@ -613,7 +616,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 			glm::vec4 parentpos =  glm::vec4(mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].position, 1);
 			parentpos = projection_matrix_ * view_matrix_ * parentpos;
 			parentpos = parentpos / glm::vec4(parentpos.w,parentpos.w,parentpos.w,parentpos.w);
-			glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*view_height_/2);
+			glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*(view_height_ )/2);
 			
 			glm::vec2 a = mouse_start - ndc_coords;
 			glm::vec2 b = mouse_end - ndc_coords;
@@ -681,7 +684,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	// call cylinderintersect
 	//set current bone index and stop
 	double ndc_x = mouse_x * 2/ view_width_ -1;
-	double ndc_y = (view_height_ - mouse_y) * 2 / view_height_ -1;
+	double ndc_y = (window_height_ - mouse_y) * 2 / view_height_ -1;
 	glm::vec4 ndc_coords = glm::vec4(ndc_x,ndc_y, 1, 1);
 	//cout<<"ndc coords "<< glm::to_string(ndc_coords)<<endl;
 	//glm::mat4 vp =  view_matrix_ * projection_matrix_;

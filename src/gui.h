@@ -25,7 +25,7 @@ struct MatrixPointers {
 
 class GUI {
 public:
-	GUI(GLFWwindow*, int view_width = -1, int view_height = -1, int preview_height = -1);
+	GUI(GLFWwindow*, int view_width = -1, int view_height = -1, int timeline_height = -1, int preview_height = -1);
 	~GUI();
 	void assignMesh(Mesh*);
 
@@ -116,6 +116,8 @@ public:
 	void setLightColor(glm::vec4 color){ light_color_ = color;}
 	void computeColor();
 
+	float getPauseTime() { return pause_time; }
+
 	enum {x_axis,z_axis,y_axis, none};
 	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
 
@@ -152,6 +154,7 @@ private:
 	Mesh* mesh_;
 
 	int window_width_, window_height_;
+	int timeline_height_;
 	int view_width_, view_height_;
 	int preview_height_;
 

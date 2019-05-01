@@ -14,6 +14,19 @@ void create_quad(std::vector<glm::vec4>& quad_vertices, std::vector<glm::uvec3>&
 	quad_faces.push_back(glm::uvec3(3,4,5));
 }
 
+void create_scrub(std::vector<glm::vec4>& scrub_vertices, std::vector<glm::uvec3>& scrub_indices) {
+	scrub_vertices.push_back(glm::vec4(-1.0f, -5.0f, -0.5f, 1.0f));
+	scrub_vertices.push_back(glm::vec4(-0.985f, -5.0f, -0.5f, 1.0f));
+	scrub_vertices.push_back(glm::vec4(-1.0f,  5.0f, -0.5f, 1.0f));
+	scrub_vertices.push_back(glm::vec4(-1.0f,  5.0f, -0.5f, 1.0f));
+	scrub_vertices.push_back(glm::vec4(-0.985f, -5.0f, -0.5f, 1.0f));
+	scrub_vertices.push_back(glm::vec4(-0.985f,  5.0f, -0.5f, 1.0f));
+
+	scrub_indices.push_back(glm::uvec3(0,1,2));
+	scrub_indices.push_back(glm::uvec3(3,4,5));
+}
+
+
 void create_select(std::vector<glm::vec4>& select_vertices, std::vector<glm::uvec3>& select_indices){
 	//top
 	select_vertices.push_back(glm::vec4(-1.0f, 0.867f, -0.5f, 1.0f));

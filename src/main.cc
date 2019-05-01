@@ -23,11 +23,14 @@
 using namespace std;
 
 int window_width = 1280;
-int window_height = 720;
+int window_height = 960;
 int main_view_width = 960;
 int main_view_height = 720;
+int timeline_height = window_height - main_view_height;
+int timeline_chunk_height = timeline_height/3;
 int preview_width = window_width - main_view_width; // 320
 int preview_height = preview_width / 4 * 3; // 320 / 4 * 3 = 240
+//int preview_height = window_height - main_view_height;
 int preview_bar_width = preview_width;
 int preview_bar_height = main_view_height;
 const std::string window_title = "Animation";
@@ -36,7 +39,7 @@ const std::string window_title = "Animation";
 enum { kVertexBuffer, kIndexBuffer, kNumVbos };
 
 // These are our VAOs.
-enum { kQuadVao,kSelectVao, kLightVao, kNumVaos };
+enum { kQuadVao,kSelectVao, kLightVao, kTimelineVao, kScrubVao, kNumVaos };
 
 GLuint g_array_objects[kNumVaos];  // This will store the VAO descriptors.
 GLuint g_buffer_objects[kNumVaos][kNumVbos];  // These will store VBO descriptors.
@@ -111,6 +114,17 @@ const char* light_fragment_shader =
 #include "shaders/light.frag"
 ;
 
+const char* timeline_fragment_shader =
+#include "shaders/timeline.frag"
+;
+
+const char* scrub_vertex_shader =
+#include "shaders/scrub.vert"
+;
+
+const char* scrub_fragment_shader =
+#include "shaders/scrub.frag"
+;
 
 void ErrorCallback(int error, const char* description) {
 	std::cerr << "GLFW Error: " << description << "\n";
@@ -193,7 +207,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 	GLFWwindow *window = init_glefw();
-	GUI gui(window, main_view_width, main_view_height, preview_height);
+	GUI gui(window, main_view_width, main_view_height, timeline_height, preview_height);
 
 	std::vector<glm::vec4> floor_vertices;
 	std::vector<glm::uvec3> floor_faces;
@@ -210,6 +224,10 @@ int main(int argc, char* argv[])
 	std::vector<glm::vec4> select_vertices;
 	std::vector<glm::uvec3> select_indices;
 	create_select(select_vertices, select_indices);
+
+	std::vector<glm::vec4> scrub_vertices;
+	std::vector<glm::uvec3> scrub_indices;
+	create_scrub(scrub_vertices, scrub_indices);
 
 	std::vector<glm::vec4> light_vertices;
 	std::vector<glm::uvec3> light_faces;
@@ -590,6 +608,97 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(light_color_location =
 		glGetUniformLocation(light_program_id, "color"));
 
+	//TIMELINE SETUP
+	GLuint timeline_fragment_shader_id = 0;
+	CHECK_GL_ERROR(timeline_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER));
+	CHECK_GL_ERROR(glShaderSource(timeline_fragment_shader_id, 1, &timeline_fragment_shader, nullptr));
+	glCompileShader(timeline_fragment_shader_id);
+	CHECK_GL_SHADER_ERROR(timeline_fragment_shader_id);
+	//generate vaos!!!
+	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kTimelineVao]));
+
+	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kTimelineVao][0]));
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kTimelineVao][kVertexBuffer]));
+	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
+				sizeof(float) * quad_vertices.size() * 4, quad_vertices.data(),
+				GL_STATIC_DRAW));
+	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
+	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,g_buffer_objects[kQuadVao][kIndexBuffer]));
+	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+				sizeof(uint32_t) * quad_faces.size() * 3,
+				quad_faces.data(), GL_STATIC_DRAW));
+
+	GLuint timeline_program_id = 0;
+	GLint timeline_ortho_location = 0;
+	GLint timeline_offset_location = 0;
+
+	CHECK_GL_ERROR(timeline_program_id = glCreateProgram());
+	CHECK_GL_ERROR(glAttachShader(timeline_program_id, quad_vertex_shader_id));
+	CHECK_GL_ERROR(glAttachShader(timeline_program_id, timeline_fragment_shader_id));
+
+	CHECK_GL_ERROR(glBindAttribLocation(timeline_program_id, 0, "vertex_position"));
+	CHECK_GL_ERROR(glBindFragDataLocation(timeline_program_id, 0, "fragment_color"));
+
+	glLinkProgram(timeline_program_id);
+	CHECK_GL_PROGRAM_ERROR(timeline_program_id);
+
+	CHECK_GL_ERROR(timeline_ortho_location =
+		glGetUniformLocation(timeline_program_id, "ortho"));
+	CHECK_GL_ERROR(timeline_offset_location =
+		glGetUniformLocation(timeline_program_id, "offset"));
+
+	GLuint scrub_vertex_shader_id = 0;
+	CHECK_GL_ERROR(scrub_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
+	CHECK_GL_ERROR(glShaderSource(scrub_vertex_shader_id, 1, &scrub_vertex_shader, nullptr));
+	glCompileShader(scrub_vertex_shader_id);
+	CHECK_GL_SHADER_ERROR(scrub_vertex_shader_id);
+
+	GLuint scrub_fragment_shader_id = 0;
+	CHECK_GL_ERROR(scrub_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER));
+	CHECK_GL_ERROR(glShaderSource(scrub_fragment_shader_id, 1, &scrub_fragment_shader, nullptr));
+	glCompileShader(scrub_fragment_shader_id);
+	CHECK_GL_SHADER_ERROR(scrub_fragment_shader_id);
+
+	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kScrubVao]));
+
+
+	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kScrubVao][0]));
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kScrubVao][kVertexBuffer]));
+	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
+				sizeof(float) * scrub_vertices.size() * 4, scrub_vertices.data(),
+				GL_STATIC_DRAW));
+	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
+	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,g_buffer_objects[kScrubVao][kIndexBuffer]));
+	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+				sizeof(uint32_t) * scrub_indices.size() * 3,
+				scrub_indices.data(), GL_STATIC_DRAW));
+
+	GLuint scrub_program_id = 0;
+	GLint scrub_ortho_location = 0;
+	GLint scrub_time_location = 0;
+
+	CHECK_GL_ERROR(scrub_program_id = glCreateProgram());
+	CHECK_GL_ERROR(glAttachShader(scrub_program_id, scrub_vertex_shader_id));
+	CHECK_GL_ERROR(glAttachShader(scrub_program_id, scrub_fragment_shader_id));
+
+	CHECK_GL_ERROR(glBindAttribLocation(scrub_program_id, 0, "vertex_position"));
+	CHECK_GL_ERROR(glBindFragDataLocation(scrub_program_id, 0, "fragment_color"));
+
+	glLinkProgram(scrub_program_id);
+	CHECK_GL_PROGRAM_ERROR(scrub_program_id);
+
+	CHECK_GL_ERROR(scrub_ortho_location =
+		glGetUniformLocation(scrub_program_id, "ortho"));
+	CHECK_GL_ERROR(scrub_time_location =
+		glGetUniformLocation(scrub_program_id, "time"));
 
 
 
@@ -731,7 +840,7 @@ int main(int argc, char* argv[])
 		std::cerr << "call from outside: " << std_model->data_source() << "\n";
 		std_model->bind(0);
 #endif
-
+		float scrub_time = gui.getPauseTime();
 		if (gui.isPlaying()) {
 			std::stringstream title;
 			float cur_time = gui.getCurrentPlayTime();
@@ -742,7 +851,7 @@ int main(int argc, char* argv[])
 			glfwSetWindowTitle(window, title.str().data());
 			//pass in animation state to updateAnimation
 			//im sorry
-
+			scrub_time = cur_time;
 			mesh.updateAnimation(cur_time, gui.getAnimationState());
 			gui.updateScene(cur_time);
 
@@ -755,6 +864,7 @@ int main(int argc, char* argv[])
 		//cout<<glm::to_string(gui.getCamera())<<endl;
 
 		if(gui.saveTexture()) {
+			
 			GLuint FramebufferName = 0;
 			glGenFramebuffers(1, &FramebufferName);
 			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
@@ -783,6 +893,7 @@ int main(int argc, char* argv[])
 
 			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 			glViewport(0,0,main_view_width,main_view_height);
+			
 
 			int current_bone = gui.getCurrentBone();
 
@@ -900,7 +1011,7 @@ int main(int argc, char* argv[])
 #endif
 		}
 		//glViewport(main_view_width, main_view_height - preview_height, preview_width, preview_height);
-		glViewport(main_view_width, 0, preview_width, main_view_height);
+		glViewport(main_view_width, timeline_height, preview_width, main_view_height);
 		vector<GLuint> texture_locs = gui.getTextureLocs();
 		glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
 		for (int quad = 0; quad < (int) texture_locs.size(); ++quad) {
@@ -932,6 +1043,24 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, select_indices.size() * 3, GL_UNSIGNED_INT, 0));
 
 		}
+		// switch to drawing the timeline
+		glViewport(0, main_view_height, main_view_width, timeline_height);
+		CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kTimelineVao]));
+		CHECK_GL_ERROR(glUseProgram(timeline_program_id));
+		CHECK_GL_ERROR(	glUniformMatrix4fv(timeline_ortho_location, 1, GL_FALSE, &proj[0][0]));
+		glm::vec4 timeline_offset = glm::vec4(0, 0, 0, 0);
+		CHECK_GL_ERROR(	glUniform2fv(timeline_offset_location, 1, &timeline_offset[0]));
+		CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
+
+
+		CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kScrubVao]));
+		CHECK_GL_ERROR(glUseProgram(scrub_program_id));
+		CHECK_GL_ERROR(	glUniformMatrix4fv(scrub_ortho_location, 1, GL_FALSE, &proj[0][0]));
+
+		CHECK_GL_ERROR(	glUniform1fv(scrub_time_location, 1, &scrub_time));
+		CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES,scrub_indices.size() * 3, GL_UNSIGNED_INT, 0));
+
+
 		glViewport(0, 0, main_view_width, main_view_height);
 
 		if (gui.saveScreenshot()) {
