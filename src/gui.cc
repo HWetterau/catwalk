@@ -572,9 +572,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	last_y_ = current_y_;
 	current_x_ = mouse_x;
 	current_y_ = window_height_ - mouse_y;
-	cout << "y " << current_y_ << endl;
-	cout << "window height " << window_height_ << endl;
-	cout << "view height " << view_height_ << endl;
+
 	float delta_x = current_x_ - last_x_;
 	float delta_y = current_y_ - last_y_;
 	if (sqrt(delta_x * delta_x + delta_y * delta_y) < 1e-15)
@@ -587,8 +585,33 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	glm::uvec4 viewport = glm::uvec4(0, 0, view_width_, view_height_);
 
 	bool drag_camera = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_RIGHT;
-	bool drag_bone = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT;
+	bool drag_bone = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT && transparent_;
 	bool drag_light = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_MIDDLE && chosen_axis != none;
+	bool drag_scrub = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT;
+	
+	if(current_y_ >= view_height_){
+		//on the timeline
+		 glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
+		glm::vec4 coords = glm::vec4(pause_time *0.0452 + -1,0,0,1);
+		glm::vec4 coords2 = glm::vec4(pause_time *0.0452+ -0.985,0,0,1);
+		coords = proj * view_matrix_ * coords;
+		coords2 = proj * view_matrix_ * coords2;
+		//cout<<" projected "<<coords[0]<<endl;
+		// cout<<"multiplied "<<(coords[0]+ 1)*view_width_/2<<endl;  
+		float comparex = current_x_/view_width_ * 2 - 1;
+		if(!play_){
+			// cout << "paused " << endl;
+			// cout << "drag scrub " << drag_scrub << endl;
+			if(comparex >= coords[0] && comparex <= coords2[0] && drag_scrub){
+				pause_time += (delta_x * .03);
+				move_scrub = true;
+			} else if (move_scrub) {
+				pause_time += (delta_x * .03);
+			}
+		}
+		return;
+	}
+
 
 	if (drag_camera) {
 		glm::vec3 axis = glm::normalize(
@@ -780,8 +803,12 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 }
 
 void GUI::mouseButtonCallback(int button, int action, int mods)
-{
+{	
+	if(action == GLFW_RELEASE){	
+		move_scrub = false;
+	}
 	if (current_x_ <= view_width_) {
+		//cout << "current x" << endl;
 		drag_state_ = (action == GLFW_PRESS);
 		current_button_ = button;
 		return ;
@@ -795,6 +822,8 @@ void GUI::mouseButtonCallback(int button, int action, int mods)
 			}
 		}
 	}
+	
+
 	
 }
 

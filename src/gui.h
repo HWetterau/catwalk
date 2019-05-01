@@ -210,6 +210,7 @@ private:
 	double intensity_ = 1.0;
 	vector<LightKeyFrame> lightKeyframes;
 	vector<CameraKeyFrame> cameraKeyframes;
+	bool move_scrub = false;
 };
 
 #endif

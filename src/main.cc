@@ -20,6 +20,10 @@
 #include <glm/gtx/io.hpp>
 #include <debuggl.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+
 using namespace std;
 
 int window_width = 1280;
@@ -635,6 +639,7 @@ int main(int argc, char* argv[])
 	GLuint timeline_program_id = 0;
 	GLint timeline_ortho_location = 0;
 	GLint timeline_offset_location = 0;
+	GLint timeline_texture_location = 0;
 
 	CHECK_GL_ERROR(timeline_program_id = glCreateProgram());
 	CHECK_GL_ERROR(glAttachShader(timeline_program_id, quad_vertex_shader_id));
@@ -650,6 +655,31 @@ int main(int argc, char* argv[])
 		glGetUniformLocation(timeline_program_id, "ortho"));
 	CHECK_GL_ERROR(timeline_offset_location =
 		glGetUniformLocation(timeline_program_id, "offset"));
+	CHECK_GL_ERROR(timeline_texture_location =
+		glGetUniformLocation(timeline_program_id, "text"));
+
+
+	// timeline texture
+	int width, height, nrChannels;
+
+	stbi_set_flip_vertically_on_load(true);  
+	unsigned char *data = stbi_load("../assets/line.bmp", &width, &height, &nrChannels, 0); 
+	unsigned int timeline_texture;
+	if (data)
+	{	
+		
+		glGenTextures(1, &timeline_texture);
+		glBindTexture(GL_TEXTURE_2D, timeline_texture);  
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		cout << "error reading texture " << endl;
+	}
+
+	stbi_image_free(data);
+
+
+	
 
 	GLuint scrub_vertex_shader_id = 0;
 	CHECK_GL_ERROR(scrub_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
@@ -858,6 +888,14 @@ int main(int argc, char* argv[])
 		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
 			gui.clearPose();
+		} else {
+			std::stringstream title;
+			float cur_time = gui.getPauseTime();
+			title << window_title << " Playing: "
+			      << std::setprecision(2)
+			      << std::setfill('0') << std::setw(6)
+			      << cur_time << " sec";
+			glfwSetWindowTitle(window, title.str().data());
 		}
 		// FIXME: update the preview textures here
 
@@ -1045,11 +1083,16 @@ int main(int argc, char* argv[])
 		}
 		// switch to drawing the timeline
 		glViewport(0, main_view_height, main_view_width, timeline_height);
+		glm::mat4 timeline_proj = glm::ortho(-1.0f,1.0f,-1.0f,1.0f);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, timeline_texture);
 		CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kTimelineVao]));
 		CHECK_GL_ERROR(glUseProgram(timeline_program_id));
-		CHECK_GL_ERROR(	glUniformMatrix4fv(timeline_ortho_location, 1, GL_FALSE, &proj[0][0]));
+		
+		CHECK_GL_ERROR(	glUniformMatrix4fv(timeline_ortho_location, 1, GL_FALSE, &timeline_proj[0][0]));
 		glm::vec4 timeline_offset = glm::vec4(0, 0, 0, 0);
 		CHECK_GL_ERROR(	glUniform2fv(timeline_offset_location, 1, &timeline_offset[0]));
+		CHECK_GL_ERROR(	glUniform1i(timeline_texture_location, 0));
 		CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
 
