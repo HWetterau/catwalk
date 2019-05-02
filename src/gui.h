@@ -103,9 +103,9 @@ public:
 		view_matrix_ = glm::lookAt(eye_, center_, up_);
 	 }
 
-	glm::vec3 lightSpline(int curframe, float t);
-	glm::vec3 cameraPosSpline(int curframe,float t);
-	glm::mat3 cameraRotSpline(int curframe, float t);
+	glm::vec3 lightSpline(int cp0, int cp1, int cp2, int cp3, float t);
+	glm::vec3 cameraPosSpline(int cp0, int cp1, int cp2, int cp3, float t);
+	glm::mat3 cameraRotSpline(int cp0, int cp1, int cp2, int cp3, float t);
 	void updateScene(float t);
 
 	glm::vec4 getLightPosition() {return light_position_;}
@@ -123,10 +123,12 @@ public:
 	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
 
 	struct SceneState{
+		int prev_light_keyframe;
 		int current_light_keyframe;
 		int next_light_keyframe;
 		int end_light_keyframe;
 
+		int prev_camera_keyframe;
 		int current_camera_keyframe;
 		int next_camera_keyframe;
 		int end_camera_keyframe;
@@ -135,18 +137,20 @@ public:
 		float old_time;
 		float old_time2;
 
-		SceneState(): current_light_keyframe(0), next_light_keyframe(1), current_camera_keyframe(0), next_camera_keyframe(1) {}
+		SceneState(): current_light_keyframe(0), next_light_keyframe(1), current_camera_keyframe(0), next_camera_keyframe(1), prev_light_keyframe(0), prev_camera_keyframe(0) {}
 
 	};
 	struct LightKeyFrame {
 		glm::vec4 light_pos;
 		glm::vec4 light_color;
+		float time;
 	};
 
 	struct CameraKeyFrame {
 		glm::vec3 camera_pos;
 		glm::mat3 camera_rot;
 		float camera_dist;
+		float time;
 
 	};
 

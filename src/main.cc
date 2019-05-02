@@ -894,6 +894,7 @@ int main(int argc, char* argv[])
 			      << cur_time << " sec";
 			glfwSetWindowTitle(window, title.str().data());
 			mesh.updateAnimation(cur_time, gui.getAnimationState());
+			gui.updateScene(cur_time);
 		} else if (gui.isPoseDirty()) {
 			mesh.updateAnimation();
 			gui.clearPose();

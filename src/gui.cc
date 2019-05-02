@@ -301,6 +301,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		LightKeyFrame lk;
 		lk.light_pos = light_position_;
 		lk.light_color = light_color_;
+		lk.time = pause_time;
 		lightKeyframes.push_back(lk);
 		sceneState->end_light_keyframe = lightKeyframes.size() - 1;
 	
@@ -309,8 +310,8 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		ck.camera_pos = eye_;
 		ck.camera_rot = orientation_;
 		ck.camera_dist = camera_distance_;
+		ck.time = pause_time;
 		cameraKeyframes.push_back(ck);
-		cout << "size after " << cameraKeyframes.size() << endl;
 		sceneState->end_camera_keyframe = cameraKeyframes.size() - 1;
 	
 	}else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
@@ -445,28 +446,16 @@ glm::mat4 GUI::lightTransform(){
 	
 }
 
-glm::vec3 GUI::lightSpline(int curframe, float t){
-	int cp0 = glm::clamp<int>(curframe - 1, 0, lightKeyframes.size() - 1);
-    int cp1 = glm::clamp<int>(curframe,     0, lightKeyframes.size()- 1);
-    int cp2 = glm::clamp<int>(curframe + 1, 0, lightKeyframes.size() - 1);
-    int cp3 = glm::clamp<int>(curframe + 2, 0, lightKeyframes.size() - 1);
+glm::vec3 GUI::lightSpline(int cp0, int cp1, int cp2, int cp3, float t){
 	float local_t = glm::fract(t);
 	return glm::catmullRom(lightKeyframes[cp0].light_pos, lightKeyframes[cp1].light_pos, lightKeyframes[cp2].light_pos, lightKeyframes[cp3].light_pos, local_t);
 }
-glm::vec3 GUI::cameraPosSpline(int curframe,float t){
-	int cp0 = glm::clamp<int>(curframe - 1, 0, cameraKeyframes.size() - 1);
-    int cp1 = glm::clamp<int>(curframe,     0, cameraKeyframes.size() - 1);
-    int cp2 = glm::clamp<int>(curframe + 1, 0, cameraKeyframes.size() - 1);
-    int cp3 = glm::clamp<int>(curframe + 2, 0, cameraKeyframes.size() - 1);
+glm::vec3 GUI::cameraPosSpline(int cp0, int cp1, int cp2, int cp3, float t){
 	float local_t = glm::fract(t);
 	return glm::catmullRom(cameraKeyframes[cp0].camera_pos, cameraKeyframes[cp1].camera_pos, cameraKeyframes[cp2].camera_pos, cameraKeyframes[cp3].camera_pos, local_t);
 }
 
-glm::mat3 GUI::cameraRotSpline(int curframe, float t){
-	int cp0 = glm::clamp<int>(curframe - 1, 0, cameraKeyframes.size() - 1);
-    int cp1 = glm::clamp<int>(curframe,     0, cameraKeyframes.size() - 1);
-    int cp2 = glm::clamp<int>(curframe + 1, 0, cameraKeyframes.size() - 1);
-    int cp3 = glm::clamp<int>(curframe + 2, 0, cameraKeyframes.size() - 1);
+glm::mat3 GUI::cameraRotSpline(int cp0, int cp1, int cp2, int cp3, float t){
 	float local_t = glm::fract(t);
 
 	glm::mat3 m1 = cameraKeyframes[cp0].camera_rot;
@@ -511,26 +500,65 @@ void GUI::updateScene(float t){
 			bool interpolate = true;
 			int cur = sceneState->current_light_keyframe;
 
-			if ( cur == sceneState->end_light_keyframe){
+			if(sceneState->old_time < sceneState->current_time){
+				//forwards
+				if ( cur == sceneState->end_light_keyframe){
 
-				interpolate = false;
+					interpolate = false;
 
-			} else if (sceneState->current_time - sceneState->old_time > (1/fps)) {
+				} else if (sceneState->current_time - sceneState->old_time > (1/fps)) {
 
-				sceneState->old_time = sceneState->current_time;
+					sceneState->old_time = sceneState->current_time;
 
-				if (sceneState->next_light_keyframe < sceneState->end_light_keyframe) {
-					sceneState->current_light_keyframe = sceneState->next_light_keyframe;
-					sceneState->next_light_keyframe++;
-					interpolate = true;
-				} else {
-					sceneState->current_light_keyframe = sceneState->next_light_keyframe;
+					if (sceneState->next_light_keyframe < sceneState->end_light_keyframe) {
+						sceneState->prev_light_keyframe = sceneState->current_light_keyframe;
+						sceneState->current_light_keyframe = sceneState->next_light_keyframe;
+						sceneState->next_light_keyframe++;
+						interpolate = true;
+					} else {
+						sceneState->current_light_keyframe = sceneState->next_light_keyframe;
+					}
 				}
-			}
-			float interp = fps * (sceneState->current_time - sceneState->old_time);
-			if (interpolate){
-				light_position_ = glm::vec4(lightSpline(sceneState->current_light_keyframe, interp),1);
-				light_color_ = glm::mix(lightKeyframes[sceneState->current_light_keyframe].light_color,lightKeyframes[sceneState->next_light_keyframe].light_color,interp);	
+				float interp = fps * (sceneState->current_time - sceneState->old_time);
+				if (interpolate){
+					int curframe = sceneState->current_light_keyframe;
+					int cp0 = glm::clamp<int>(curframe - 1, 0, lightKeyframes.size() - 1);
+					int cp1 = glm::clamp<int>(curframe,     0, lightKeyframes.size()- 1);
+					int cp2 = glm::clamp<int>(curframe + 1, 0, lightKeyframes.size() - 1);
+					int cp3 = glm::clamp<int>(curframe + 2, 0, lightKeyframes.size() - 1);
+					light_position_ = glm::vec4(lightSpline(cp0,cp1,cp2,cp3, interp),1);
+					light_color_ = glm::mix(lightKeyframes[sceneState->current_light_keyframe].light_color,lightKeyframes[sceneState->next_light_keyframe].light_color,interp);	
+				}
+			} else {
+				//backwards
+				if ( sceneState->current_light_keyframe == 0){
+
+					interpolate = false;
+
+				} else if (sceneState->old_time - sceneState->current_time  > (1/fps)) {
+
+					sceneState->old_time = sceneState->current_time;
+
+					if (sceneState->prev_light_keyframe > 0) {
+						sceneState->next_light_keyframe = sceneState->current_light_keyframe;
+						sceneState->current_light_keyframe = sceneState->prev_light_keyframe;
+						sceneState->prev_light_keyframe--;
+						interpolate = true;
+					} else {
+						sceneState->next_light_keyframe = sceneState->current_light_keyframe;
+						sceneState->current_light_keyframe = sceneState->prev_light_keyframe;
+					}
+				}
+				float interp = fps * (sceneState->old_time - sceneState->current_time );
+				if (interpolate){
+					int curframe = sceneState->current_light_keyframe;
+					int cp0 = glm::clamp<int>(curframe + 1, 0, lightKeyframes.size() - 1);
+					int cp1 = glm::clamp<int>(curframe,     0, lightKeyframes.size()- 1);
+					int cp2 = glm::clamp<int>(curframe - 1, 0, lightKeyframes.size() - 1);
+					int cp3 = glm::clamp<int>(curframe - 2, 0, lightKeyframes.size() - 1);
+					light_position_ = glm::vec4(lightSpline(cp0,cp1,cp2,cp3, interp),1);
+					light_color_ = glm::mix(lightKeyframes[sceneState->current_light_keyframe].light_color,lightKeyframes[sceneState->prev_light_keyframe].light_color,interp);	
+				}
 			}
 		}
 		if(cameraKeyframes.size()>0){
@@ -539,30 +567,73 @@ void GUI::updateScene(float t){
 			float fps = 1.0;
 			bool interpolate = true;
 			int cur = sceneState->current_camera_keyframe;
-			
-			if ( cur == sceneState->end_camera_keyframe){
 
-				interpolate = false;
+			if(sceneState->old_time2 < sceneState->current_time) {
+					//forwards
+				
+				if ( cur == sceneState->end_camera_keyframe){
 
-			} else if (sceneState->current_time - sceneState->old_time2 > (1/fps)) {
+					interpolate = false;
 
-				sceneState->old_time2 = sceneState->current_time;
+				} else if (sceneState->current_time - sceneState->old_time2 > (1/fps)) {
 
-				if (sceneState->next_camera_keyframe < sceneState->end_camera_keyframe) {
-					sceneState->current_camera_keyframe = sceneState->next_camera_keyframe;
-					sceneState->next_camera_keyframe++;
-					interpolate = true;
-				} else {
-					sceneState->current_camera_keyframe = sceneState->next_camera_keyframe;
+					sceneState->old_time2 = sceneState->current_time;
+
+					if (sceneState->next_camera_keyframe < sceneState->end_camera_keyframe) {
+						sceneState->prev_camera_keyframe = sceneState->current_camera_keyframe;
+						sceneState->current_camera_keyframe = sceneState->next_camera_keyframe;
+						sceneState->next_camera_keyframe++;
+						interpolate = true;
+					} else {
+						sceneState->prev_camera_keyframe = sceneState->current_camera_keyframe;
+						sceneState->current_camera_keyframe = sceneState->next_camera_keyframe;
+					}
 				}
-			}
-			float interp = fps * (sceneState->current_time - sceneState->old_time2);
-			if (interpolate){
-				glm::vec3 temp_eye = cameraPosSpline(sceneState->current_camera_keyframe, interp);
-				float camera_dist = glm::mix(cameraKeyframes[sceneState->current_camera_keyframe].camera_dist, cameraKeyframes[sceneState->next_camera_keyframe].camera_dist,interp);
-				glm::mat3 temp_rot = cameraRotSpline(sceneState->current_camera_keyframe, interp);	
-				changeCamera(temp_eye,temp_rot,camera_dist);
-			}
+				float interp = fps * (sceneState->current_time - sceneState->old_time2);
+				if (interpolate){
+					int curframe = sceneState->current_camera_keyframe;
+					int cp0 = glm::clamp<int>(curframe - 1, 0, cameraKeyframes.size() - 1);
+					int cp1 = glm::clamp<int>(curframe,     0, cameraKeyframes.size() - 1);
+					int cp2 = glm::clamp<int>(curframe + 1, 0, cameraKeyframes.size() - 1);
+					int cp3 = glm::clamp<int>(curframe + 2, 0, cameraKeyframes.size() - 1);
+					glm::vec3 temp_eye = cameraPosSpline(cp0,cp1,cp2,cp3,interp);
+					float camera_dist = glm::mix(cameraKeyframes[sceneState->current_camera_keyframe].camera_dist, cameraKeyframes[sceneState->next_camera_keyframe].camera_dist,interp);
+					glm::mat3 temp_rot = cameraRotSpline(cp0,cp1,cp2,cp3,interp);	
+					changeCamera(temp_eye,temp_rot,camera_dist);
+				}
+			} else {
+				//backwards
+				if ( cur == 0){
+
+					interpolate = false;
+
+				} else if (sceneState->old_time2  -sceneState->current_time > (1/fps)) {
+
+					sceneState->old_time2 = sceneState->current_time;
+
+					if (sceneState->prev_camera_keyframe > 0) {
+						sceneState->next_camera_keyframe = sceneState->current_camera_keyframe;
+						sceneState->current_camera_keyframe = sceneState->prev_camera_keyframe;
+						sceneState->prev_camera_keyframe--;
+						interpolate = true;
+					} else {
+						sceneState->next_camera_keyframe = sceneState->current_camera_keyframe;
+						sceneState->current_camera_keyframe = sceneState->prev_camera_keyframe;
+					}
+				}
+				float interp = fps * (sceneState->old_time2 - sceneState->current_time );
+				if (interpolate){
+					int curframe = sceneState->current_camera_keyframe;
+					int cp0 = glm::clamp<int>(curframe + 1, 0, cameraKeyframes.size() - 1);
+					int cp1 = glm::clamp<int>(curframe,     0, cameraKeyframes.size() - 1);
+					int cp2 = glm::clamp<int>(curframe - 1, 0, cameraKeyframes.size() - 1);
+					int cp3 = glm::clamp<int>(curframe - 2, 0, cameraKeyframes.size() - 1);
+					glm::vec3 temp_eye = cameraPosSpline(cp0,cp1,cp2,cp3,interp);
+					float camera_dist = glm::mix(cameraKeyframes[sceneState->current_camera_keyframe].camera_dist, cameraKeyframes[sceneState->prev_camera_keyframe].camera_dist,interp);
+					glm::mat3 temp_rot = cameraRotSpline(cp0,cp1,cp2,cp3,interp);	
+					changeCamera(temp_eye,temp_rot,camera_dist);
+				}
+			}	
 		}
 	}
 }
