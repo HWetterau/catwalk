@@ -121,17 +121,18 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 	if (t != -1 && skeleton.keyframes.size() > 0) {
 
 		a->current_time = t;
-		float fps = 1.0;
+		//float fps = 1.0;
 		bool interpolate = true;
 		KeyFrame result;
 		if(a->current_time > a->old_time){
 			//forwards
+			float length = skeleton.keyframes[a->next_keyframe].time - skeleton.keyframes[a->current_keyframe].time;
 			
 			if (a->current_keyframe == a->end_keyframe){
 		
 					interpolate = false;
 
-			} else if (a->current_time - a->old_time > (1/fps)) {
+			} else if (a->current_time - a->old_time > length) {
 
 				a->old_time = a->current_time;
 
@@ -146,7 +147,8 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 					a->current_keyframe = a->next_keyframe;
 				}
 			}
-			float interp = fps * (a->current_time - a->old_time);
+			
+			float interp =  (a->current_time - a->old_time)/length;
 			
 			if (interpolate){
 				int cp1 = glm::clamp<int>(a->current_keyframe, 0, skeleton.keyframes.size() - 1);
@@ -160,10 +162,11 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 			}
 		} else {
 			//backwards wooo
+			float length = skeleton.keyframes[a->current_keyframe].time - skeleton.keyframes[a->prev_keyframe].time;
 			if (a->current_keyframe == 0){
 		
 					interpolate = false;
-			} else if (a->old_time - a->current_time > (1/fps)) {
+			} else if (a->old_time - a->current_time > length) {
 			
 
 				a->old_time = a->current_time;
@@ -179,7 +182,7 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 					a->current_keyframe = a->prev_keyframe;
 				}
 			}
-			float interp = fps * (a->old_time - a->current_time);
+			float interp = (a->old_time - a->current_time)/length;
 			
 			if (interpolate){
 				int cp1 = glm::clamp<int>(a->current_keyframe, 0, skeleton.keyframes.size() - 1);

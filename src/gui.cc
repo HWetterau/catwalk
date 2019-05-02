@@ -287,13 +287,25 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
 		}
 		k.time = pause_time;
-
-		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
-			//insert before
-			mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + selected_frame, k);
-		} else {
+		if (getNumKeyframes() == 0){
 			mesh_->skeleton.keyframes.push_back(k);
+		} else {
+			float current_keyframe_time  = mesh_->skeleton.keyframes[state->current_keyframe].time;
+			if(k.time < current_keyframe_time){
+				mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + state->current_keyframe, k);
+			}else if (k.time > current_keyframe_time){
+				mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + state->current_keyframe + 1, k);
+			}else {
+				mesh_->skeleton.keyframes[state->current_keyframe] = k;
+			}
 		}
+
+		// if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
+		// 	//insert before
+		// 	mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + selected_frame, k);
+		// } else {
+		// 	mesh_->skeleton.keyframes.push_back(k);
+		// }
 		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
 		save_texture_ = true;
 
