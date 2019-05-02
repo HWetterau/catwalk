@@ -59,6 +59,7 @@ public:
 
 	bool isTransparent() const { return transparent_; }
 	bool isPlaying() const { return play_; }
+	bool isScrubbing() const {return scrubbing_;}
 	float getCurrentPlayTime() const;
 
 	AnimationState* getAnimationState() { return state; }
@@ -194,6 +195,7 @@ private:
 	bool captureWASDUPDOWN(int key, int action);
 
 	bool play_ = false;
+	bool scrubbing_ = false;
 
 	//store keyframes in gui?
 	SceneState* sceneState;

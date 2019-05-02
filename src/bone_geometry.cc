@@ -116,39 +116,82 @@ void Mesh::computeBounds()
 
 void Mesh::updateAnimation(float t, AnimationState* a)
 {	// FIXME: Support Animation Here
+	if(a == nullptr)
+		return;
 	if (t != -1 && skeleton.keyframes.size() > 0) {
 
 		a->current_time = t;
 		float fps = 1.0;
 		bool interpolate = true;
-		if (a->current_keyframe == a->end_keyframe){
-	
-				interpolate = false;
+		KeyFrame result;
+		if(a->current_time > a->old_time){
+			//forwards
+			
+			if (a->current_keyframe == a->end_keyframe){
+		
+					interpolate = false;
 
-		} else if (a->current_time - a->old_time > (1/fps)) {
+			} else if (a->current_time - a->old_time > (1/fps)) {
 
-			a->old_time = a->current_time;
+				a->old_time = a->current_time;
 
- 			if (a->next_keyframe < a->end_keyframe) {
-				a->current_keyframe = a->next_keyframe;
-				a->next_keyframe++;
-				interpolate = true;
+				if (a->next_keyframe < a->end_keyframe) {
+					a->prev_keyframe = a->current_keyframe;
+					a->current_keyframe = a->next_keyframe;
+					a->next_keyframe++;
+					interpolate = true;
+
+				} else {
+					a->prev_keyframe = a->current_keyframe;
+					a->current_keyframe = a->next_keyframe;
+				}
+			}
+			float interp = fps * (a->current_time - a->old_time);
+			
+			if (interpolate){
+				int cp1 = glm::clamp<int>(a->current_keyframe, 0, skeleton.keyframes.size() - 1);
+				int cp2 = glm::clamp<int>(a->next_keyframe, 0, skeleton.keyframes.size() - 1);
+				int cp3 = glm::clamp<int>(a->next_keyframe +1, 0, skeleton.keyframes.size() - 1);
+
+				KeyFrame::interpolate(skeleton.keyframes[cp1], skeleton.keyframes[cp2], skeleton.keyframes[cp3], interp, result);
 
 			} else {
-				a->current_keyframe = a->next_keyframe;
+				result = skeleton.keyframes[a->current_keyframe];
 			}
-		}
-		float interp = fps * (a->current_time - a->old_time);
-		KeyFrame result;
-		if (interpolate){
-			int cp1 = glm::clamp<int>(a->current_keyframe, 0, skeleton.keyframes.size() - 1);
-			int cp2 = glm::clamp<int>(a->next_keyframe, 0, skeleton.keyframes.size() - 1);
-			int cp3 = glm::clamp<int>(a->next_keyframe +1, 0, skeleton.keyframes.size() - 1);
-
- 			KeyFrame::interpolate(skeleton.keyframes[cp1], skeleton.keyframes[cp2], skeleton.keyframes[cp3], interp, result);
-
 		} else {
-			result = skeleton.keyframes[a->current_keyframe];
+			//backwards wooo
+			if (a->current_keyframe == 0){
+		
+					interpolate = false;
+			} else if (a->old_time - a->current_time > (1/fps)) {
+			
+
+				a->old_time = a->current_time;
+
+				if (a->prev_keyframe > 0) {
+					a->next_keyframe = a->current_keyframe;
+					a->current_keyframe = a->prev_keyframe;
+					a->prev_keyframe--;
+					interpolate = true;
+
+				} else {
+					a->next_keyframe = a->current_keyframe;
+					a->current_keyframe = a->prev_keyframe;
+				}
+			}
+			float interp = fps * (a->old_time - a->current_time);
+			
+			if (interpolate){
+				int cp1 = glm::clamp<int>(a->current_keyframe, 0, skeleton.keyframes.size() - 1);
+				int cp2 = glm::clamp<int>(a->prev_keyframe, 0, skeleton.keyframes.size() - 1);
+				int cp3 = glm::clamp<int>(a->prev_keyframe-1, 0, skeleton.keyframes.size() - 1);
+
+				KeyFrame::interpolate(skeleton.keyframes[cp1], skeleton.keyframes[cp2], skeleton.keyframes[cp3], interp, result);
+
+			} else {
+				result = skeleton.keyframes[a->current_keyframe];
+			}
+
 		}
 		changeSkeleton(result);
 	}

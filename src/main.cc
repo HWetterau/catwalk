@@ -885,18 +885,19 @@ int main(int argc, char* argv[])
 			mesh.updateAnimation(cur_time, gui.getAnimationState());
 			gui.updateScene(cur_time);
 
-		} else if (gui.isPoseDirty()) {
-			mesh.updateAnimation();
-			gui.clearPose();
-		} else {
-			std::stringstream title;
+		}else if (gui.isScrubbing()){
+				std::stringstream title;
 			float cur_time = gui.getPauseTime();
 			title << window_title << " Playing: "
 			      << std::setprecision(2)
 			      << std::setfill('0') << std::setw(6)
 			      << cur_time << " sec";
 			glfwSetWindowTitle(window, title.str().data());
-		}
+			mesh.updateAnimation(cur_time, gui.getAnimationState());
+		} else if (gui.isPoseDirty()) {
+			mesh.updateAnimation();
+			gui.clearPose();
+		} 
 		// FIXME: update the preview textures here
 
 		//cout<<glm::to_string(gui.getCamera())<<endl;

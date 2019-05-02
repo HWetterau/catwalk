@@ -286,7 +286,8 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
 			k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
 		}
-		
+		k.time = pause_time;
+
 		if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
 			//insert before
 			mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + selected_frame, k);
@@ -314,16 +315,16 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 	
 	}else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		//either play/pause animation
-		// cout << "state current frame " << state.current_keyframe << endl;
+		
 		play_ = !play_;
 		if (!play_) {
 			pause_time = getCurrentPlayTime();
 		}
 		play_start = chrono::steady_clock::now();
 
-		state->old_time = 0;
-		sceneState->old_time = 0;
-		sceneState->old_time2 = 0;
+		state->old_time = pause_time;
+		sceneState->old_time = pause_time;
+		sceneState->old_time2 = pause_time;
 
 	} else if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
 		//rewind animation
@@ -588,25 +589,31 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	bool drag_bone = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT && transparent_;
 	bool drag_light = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_MIDDLE && chosen_axis != none;
 	bool drag_scrub = drag_state_ && current_button_ == GLFW_MOUSE_BUTTON_LEFT;
+
+
 	
 	if(current_y_ >= view_height_){
 		//on the timeline
-		 glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
+		 glm::mat4 proj = glm::ortho(-1.0f,1.0f,-1.0f,1.0f);
 		glm::vec4 coords = glm::vec4(pause_time *0.0452 + -1,0,0,1);
 		glm::vec4 coords2 = glm::vec4(pause_time *0.0452+ -0.985,0,0,1);
-		coords = proj * view_matrix_ * coords;
-		coords2 = proj * view_matrix_ * coords2;
-		//cout<<" projected "<<coords[0]<<endl;
-		// cout<<"multiplied "<<(coords[0]+ 1)*view_width_/2<<endl;  
+		coords = proj  * coords;
+		coords2 = proj  * coords2;
+		
 		float comparex = current_x_/view_width_ * 2 - 1;
 		if(!play_){
-			// cout << "paused " << endl;
-			// cout << "drag scrub " << drag_scrub << endl;
 			if(comparex >= coords[0] && comparex <= coords2[0] && drag_scrub){
-				pause_time += (delta_x * .03);
+				
+				pause_time += (delta_x * .04);
+				pause_time = glm::clamp(pause_time,0.0f,45.0f);
 				move_scrub = true;
+				scrubbing_ = true;
 			} else if (move_scrub) {
-				pause_time += (delta_x * .03);
+				pause_time += (delta_x * .04);
+				pause_time = glm::clamp(pause_time,0.0f,45.0f);
+				scrubbing_ = true;
+			}else{
+				scrubbing_ = false;
 			}
 		}
 		return;

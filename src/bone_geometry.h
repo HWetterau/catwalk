@@ -68,17 +68,9 @@ struct Configuration {
 struct KeyFrame {
 	// coming from the skeleton, from jointRot()
 	std::vector<glm::fquat> rel_rot;
+	float time;
 
-	static glm::fquat doub(glm::fquat p, glm::fquat q){
-		glm::fquat temp = ((p*q)+(p*q))*q;
-		for(int i = 0; i < 4; i++){
-			temp[i] -= p[i]; //subtract p
-		}
-		return glm::normalize(temp);
-	}
-	static glm::fquat myBisect(glm::fquat p, glm::fquat q){
-		return (p+q)/ glm::length(p+q);
-	}
+	
 	static bool quatEquals(glm::fquat a, glm::fquat b){
 		//return (a[0]==b[0] && a[1]==b[1] && a[2] == b[2] && a[3]==b[3]);
 		return abs(glm::dot(a,b)) > 1- 0.0001;
@@ -126,13 +118,14 @@ struct KeyFrame {
 struct AnimationState {
 	int current_keyframe;
 	int next_keyframe;
+	int prev_keyframe;
 
 	int end_keyframe;
 
 	float current_time;
 	float old_time;
 
-	AnimationState(): current_keyframe(0), next_keyframe(1) {}
+	AnimationState(): current_keyframe(0), next_keyframe(1), prev_keyframe(0) {}
 
 	//could store interpolation factor but also could calculate
 	
