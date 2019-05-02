@@ -208,6 +208,11 @@ struct Skeleton {
 		}
 	}
 
+	void getSkeletonKeyframeTimes(vector<float>& result) {
+		for (KeyFrame k: keyframes) {
+			result.push_back(k.time);
+		}
+	}
 
 };
 

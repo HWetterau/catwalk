@@ -43,7 +43,7 @@ const std::string window_title = "Animation";
 enum { kVertexBuffer, kIndexBuffer, kNumVbos };
 
 // These are our VAOs.
-enum { kQuadVao,kSelectVao, kLightVao, kTimelineVao, kScrubVao, kNumVaos };
+enum { kQuadVao,kSelectVao, kLightVao, kTimelineVao, kScrubVao, kBoxVao, kNumVaos };
 
 GLuint g_array_objects[kNumVaos];  // This will store the VAO descriptors.
 GLuint g_buffer_objects[kNumVaos][kNumVbos];  // These will store VBO descriptors.
@@ -128,6 +128,14 @@ const char* scrub_vertex_shader =
 
 const char* scrub_fragment_shader =
 #include "shaders/scrub.frag"
+;
+
+const char* box_vertex_shader =
+#include "shaders/box.vert"
+;
+
+const char* box_fragment_shader =
+#include "shaders/box.frag"
 ;
 
 void ErrorCallback(int error, const char* description) {
@@ -232,6 +240,10 @@ int main(int argc, char* argv[])
 	std::vector<glm::vec4> scrub_vertices;
 	std::vector<glm::uvec3> scrub_indices;
 	create_scrub(scrub_vertices, scrub_indices);
+
+	std::vector<glm::vec4> box_vertices;
+	std::vector<glm::uvec3> box_faces;
+	create_box(box_vertices, box_faces);
 
 	std::vector<glm::vec4> light_vertices;
 	std::vector<glm::uvec3> light_faces;
@@ -730,6 +742,60 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(scrub_time_location =
 		glGetUniformLocation(scrub_program_id, "time"));
 
+	// setup keyframe visualization on the timeline
+	GLuint box_vertex_shader_id = 0;
+	CHECK_GL_ERROR(box_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
+	CHECK_GL_ERROR(glShaderSource(box_vertex_shader_id, 1, &box_vertex_shader, nullptr));
+	glCompileShader(box_vertex_shader_id);
+	CHECK_GL_SHADER_ERROR(box_vertex_shader_id);
+
+	GLuint box_fragment_shader_id = 0;
+	CHECK_GL_ERROR(box_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER));
+	CHECK_GL_ERROR(glShaderSource(box_fragment_shader_id, 1, &box_fragment_shader, nullptr));
+	glCompileShader(box_fragment_shader_id);
+	CHECK_GL_SHADER_ERROR(box_fragment_shader_id);
+
+	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kBoxVao]));
+
+
+	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kBoxVao][0]));
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kBoxVao][kVertexBuffer]));
+	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
+				sizeof(float) * box_vertices.size() * 4, box_vertices.data(),
+				GL_STATIC_DRAW));
+	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
+	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
+
+	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,g_buffer_objects[kBoxVao][kIndexBuffer]));
+	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+				sizeof(uint32_t) * box_faces.size() * 3,
+				box_faces.data(), GL_STATIC_DRAW));
+
+	GLuint box_program_id = 0;
+	GLint box_ortho_location = 0;
+	GLint box_offset_location = 0;
+	GLint box_color_location = 0;
+
+
+	CHECK_GL_ERROR(box_program_id = glCreateProgram());
+	CHECK_GL_ERROR(glAttachShader(box_program_id, box_vertex_shader_id));
+	CHECK_GL_ERROR(glAttachShader(box_program_id, box_fragment_shader_id));
+
+	CHECK_GL_ERROR(glBindAttribLocation(box_program_id, 0, "vertex_position"));
+	CHECK_GL_ERROR(glBindFragDataLocation(box_program_id, 0, "fragment_color"));
+
+	glLinkProgram(box_program_id);
+	CHECK_GL_PROGRAM_ERROR(box_program_id);
+
+	CHECK_GL_ERROR(box_ortho_location =
+		glGetUniformLocation(box_program_id, "ortho"));
+	CHECK_GL_ERROR(box_offset_location =
+		glGetUniformLocation(box_program_id, "offset"));
+	CHECK_GL_ERROR(box_color_location =
+		glGetUniformLocation(box_program_id, "color"));
+
 
 
 	float aspect = 0.0f;
@@ -1050,7 +1116,7 @@ int main(int argc, char* argv[])
 				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, mesh.faces.size() * 3, GL_UNSIGNED_INT, 0));
 #endif
 		}
-		//glViewport(main_view_width, main_view_height - preview_height, preview_width, preview_height);
+		
 		glViewport(main_view_width, timeline_height, preview_width, main_view_height);
 		vector<GLuint> texture_locs = gui.getTextureLocs();
 		glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
@@ -1059,7 +1125,7 @@ int main(int argc, char* argv[])
 
 			GLuint text0 = texture_locs[quad];
 			glm::vec2 offset = glm::vec2(0,-2*quad + 2 - gui.getScrollOffset());
-			//cout<<"offset "<<glm::to_string(offset)<<endl;
+			
 			//draw a quad
 			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kQuadVao]));
 			CHECK_GL_ERROR(glUseProgram(quad_program_id));
@@ -1096,6 +1162,54 @@ int main(int argc, char* argv[])
 		CHECK_GL_ERROR(	glUniform2fv(timeline_offset_location, 1, &timeline_offset[0]));
 		CHECK_GL_ERROR(	glUniform1i(timeline_texture_location, 0));
 		CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
+
+		
+		vector<float> modelTimes;
+		mesh.skeleton.getSkeletonKeyframeTimes(modelTimes);
+		glm::vec4 model_color = glm::vec4(0.0, 0.0, 1.0, 1.0);
+		for (float f : modelTimes) {
+			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kBoxVao]));
+			CHECK_GL_ERROR(glUseProgram(box_program_id));
+		
+			glm::vec2 model_offset = glm::vec2(f * 0.0452, 0.2);
+			CHECK_GL_ERROR(	glUniformMatrix4fv(box_ortho_location, 1, GL_FALSE, &timeline_proj[0][0]));
+			CHECK_GL_ERROR(	glUniform2fv(box_offset_location, 1, &model_offset[0]));
+			CHECK_GL_ERROR(	glUniform4fv(box_color_location, 1, &model_color[0]));
+			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, box_faces.size() * 3, GL_UNSIGNED_INT, 0));
+		}
+
+		vector<float> lightTimes;
+		gui.getLightKeyframeTimes(lightTimes);
+		glm::vec4 light_color = glm::vec4(1.0, 1.0, 0.0, 1.0);
+		for (float f : lightTimes) {
+			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kBoxVao]));
+			CHECK_GL_ERROR(glUseProgram(box_program_id));
+		
+			glm::vec2 light_offset = glm::vec2(f * 0.0452, 0.8);
+
+			CHECK_GL_ERROR(	glUniformMatrix4fv(box_ortho_location, 1, GL_FALSE, &timeline_proj[0][0]));
+			CHECK_GL_ERROR(	glUniform2fv(box_offset_location, 1, &light_offset[0]));
+			CHECK_GL_ERROR(	glUniform4fv(box_color_location, 1, &light_color[0]));
+			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, box_faces.size() * 3, GL_UNSIGNED_INT, 0));
+		}
+
+		vector<float> cameraTimes;
+		gui.getCameraKeyframeTimes(cameraTimes);
+		glm::vec4 camera_color = glm::vec4(0.5, 0.0, 1.0, 1.0);
+		for (float f : cameraTimes) {
+			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kBoxVao]));
+			CHECK_GL_ERROR(glUseProgram(box_program_id));
+		
+			glm::vec2 camera_offset = glm::vec2(f * 0.0452, 1.4);
+
+			CHECK_GL_ERROR(	glUniformMatrix4fv(box_ortho_location, 1, GL_FALSE, &timeline_proj[0][0]));
+			CHECK_GL_ERROR(	glUniform2fv(box_offset_location, 1, &camera_offset[0]));
+			CHECK_GL_ERROR(	glUniform4fv(box_color_location, 1, &camera_color[0]));
+			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, box_faces.size() * 3, GL_UNSIGNED_INT, 0));
+		}
+
+
+
 
 
 		CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kScrubVao]));

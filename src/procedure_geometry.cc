@@ -2,6 +2,18 @@
 #include "bone_geometry.h"
 #include "config.h"
 
+void create_box(std::vector<glm::vec4>& box_vertices, std::vector<glm::uvec3>& box_faces) {
+	box_vertices.push_back(glm::vec4(-1.0f, -1.0f, -0.3f, 1.0f));//c
+	box_vertices.push_back(glm::vec4(-0.97f, -1.0f, -0.3f, 1.0f)); //d
+	box_vertices.push_back(glm::vec4(-1.0f,  -0.4f, -0.3f, 1.0f)); //a
+	box_vertices.push_back(glm::vec4(-1.0f,  -0.4f, -0.3f, 1.0f)); //a
+	box_vertices.push_back(glm::vec4(-0.97f, -1.0f, -0.3f, 1.0f)); //d
+	box_vertices.push_back(glm::vec4(-0.97f,  -0.4f, -0.3f, 1.0f)); //b
+
+	box_faces.push_back(glm::uvec3(0,1,2));
+	box_faces.push_back(glm::uvec3(3,4,5));
+}
+
 void create_quad(std::vector<glm::vec4>& quad_vertices, std::vector<glm::uvec3>& quad_faces) {
 	quad_vertices.push_back(glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f));//c
 	quad_vertices.push_back(glm::vec4(1.0f, -1.0f, 0.0f, 1.0f)); //d

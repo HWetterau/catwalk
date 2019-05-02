@@ -119,6 +119,18 @@ public:
 
 	float getPauseTime() { return pause_time; }
 
+	void getLightKeyframeTimes(vector<float>& result) {
+		for (LightKeyFrame l: lightKeyframes) {
+			result.push_back(l.time);
+		}
+	}
+
+	void getCameraKeyframeTimes(vector<float>& result) {
+		for (CameraKeyFrame c: cameraKeyframes) {
+			result.push_back(c.time);
+		}
+	}
+
 	enum {x_axis,z_axis,y_axis, none};
 	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
 
