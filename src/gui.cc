@@ -571,26 +571,34 @@ void GUI::updateScene(float t){
 
 			if(sceneState->old_time < sceneState->current_time){
 				//forwards
+				//calculate time to spend on the current frame
 				float length = lightKeyframes[sceneState->next_light_keyframe].time - lightKeyframes[sceneState->current_light_keyframe].time;
 
-				if ( cur == sceneState->end_light_keyframe || length==0){
-
+				if ( cur == sceneState->end_light_keyframe || sceneState->current_time < lightKeyframes[sceneState->current_light_keyframe].time){
+					//out of frames or before the first frame
 					interpolate = false;
+					if(sceneState->current_time < lightKeyframes[sceneState->current_light_keyframe].time){
+						//update time if haven't reached first frame
+						sceneState->old_time =sceneState->current_time;
+					}
 
 				} else if (sceneState->current_time - sceneState->old_time > length) {
-
+					//switch keyframes
 					sceneState->old_time = min(sceneState->current_time, lightKeyframes[sceneState->end_light_keyframe].time);
 
 					if (sceneState->next_light_keyframe < sceneState->end_light_keyframe) {
+						//more frames left
 						sceneState->prev_light_keyframe = sceneState->current_light_keyframe;
 						sceneState->current_light_keyframe = sceneState->next_light_keyframe;
 						sceneState->next_light_keyframe++;
 						interpolate = true;
 					} else {
+						//no more frames left
 						sceneState->prev_light_keyframe = sceneState->current_light_keyframe;
 						sceneState->current_light_keyframe = sceneState->next_light_keyframe;
 					}
 				}
+				//calculate interpolation factor
 				float interp = (sceneState->current_time - sceneState->old_time)/length;
 				if (interpolate){
 					int curframe = sceneState->current_light_keyframe;
@@ -605,12 +613,18 @@ void GUI::updateScene(float t){
 				//backwards
 				float length = lightKeyframes[sceneState->current_light_keyframe].time - lightKeyframes[sceneState->prev_light_keyframe].time;
 				if ( sceneState->current_light_keyframe == 0 || sceneState->current_time > lightKeyframes[sceneState->current_light_keyframe].time){
+					//out of frames or havent reached first frame
 					interpolate = false;
+					if( sceneState->current_time > lightKeyframes[sceneState->current_light_keyframe].time){
+						//havent reached first frame, keep updating old_time
+						sceneState->old_time = sceneState->current_time;
+					}
 
 				} else if (sceneState->old_time - sceneState->current_time  > length) {
 					//&& sceneState->current_time <= lightKeyframes[sceneState->prev_light_keyframe].time
 					sceneState->old_time = sceneState->current_time;
 					if (sceneState->prev_light_keyframe > 0) {
+						//more frames
 						sceneState->next_light_keyframe = sceneState->current_light_keyframe;
 						sceneState->current_light_keyframe = sceneState->prev_light_keyframe;
 						sceneState->prev_light_keyframe--;
@@ -620,6 +634,7 @@ void GUI::updateScene(float t){
 						sceneState->current_light_keyframe = sceneState->prev_light_keyframe;
 					}
 				}
+				//calc interpolation factor. you get the deal
 				float interp = (sceneState->old_time - sceneState->current_time )/length;
 				if (interpolate){
 					int curframe = sceneState->current_light_keyframe;
@@ -638,7 +653,6 @@ void GUI::updateScene(float t){
 		if(cameraKeyframes.size()>0){
 			//CAMERA
 			sceneState->current_time = t;
-			float fps = 1.0;
 			bool interpolate = true;
 			int cur = sceneState->current_camera_keyframe;
 
@@ -646,9 +660,12 @@ void GUI::updateScene(float t){
 					//forwards
 				float length = cameraKeyframes[sceneState->next_camera_keyframe].time - cameraKeyframes[sceneState->current_camera_keyframe].time;
 				
-				if ( cur == sceneState->end_camera_keyframe){
+				if ( cur == sceneState->end_camera_keyframe || sceneState->current_time < cameraKeyframes[sceneState->current_camera_keyframe].time){
 
 					interpolate = false;
+					if(sceneState->current_time < cameraKeyframes[sceneState->current_camera_keyframe].time){
+						sceneState->old_time2 = sceneState->current_time;
+					}
 
 				} else if (sceneState->current_time - sceneState->old_time2 > length) {
 
@@ -679,11 +696,14 @@ void GUI::updateScene(float t){
 			} else {
 				//backwards
 				float length = cameraKeyframes[sceneState->current_camera_keyframe].time - cameraKeyframes[sceneState->prev_camera_keyframe].time;
-				if ( cur == 0){
+				if ( cur == 0 || sceneState->current_time > cameraKeyframes[sceneState->current_camera_keyframe].time){
 
 					interpolate = false;
+					if(sceneState->current_time > cameraKeyframes[sceneState->current_camera_keyframe].time){
+						sceneState->old_time2 = sceneState->current_time;
+					}
 
-				} else if (sceneState->old_time2  -sceneState->current_time > length  && sceneState->current_time < cameraKeyframes[sceneState->current_camera_keyframe].time) {
+				} else if (sceneState->old_time2  -sceneState->current_time > length) {
 
 					sceneState->old_time2 = sceneState->current_time;
 

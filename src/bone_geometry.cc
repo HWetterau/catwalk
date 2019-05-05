@@ -128,15 +128,20 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 			//forwards
 			float length = skeleton.keyframes[a->next_keyframe].time - skeleton.keyframes[a->current_keyframe].time;
 			
-			if (a->current_keyframe == a->end_keyframe){
-		
+			if (a->current_keyframe == a->end_keyframe || skeleton.keyframes[a->current_keyframe].time > a->current_time ){
+				//run out of keyframes or havent yet reached the first keyframe
 					interpolate = false;
+					if(skeleton.keyframes[a->current_keyframe].time > a->current_time){
+						//still not at the first keyframe, update the old time
+						a->old_time = a->current_time;
+					}
 
 			} else if (a->current_time - a->old_time > length) {
-
+				//time to switch frames
 				a->old_time = a->current_time;
 
 				if (a->next_keyframe < a->end_keyframe) {
+					//not at the end yet
 					a->prev_keyframe = a->current_keyframe;
 					a->current_keyframe = a->next_keyframe;
 					a->next_keyframe++;
@@ -147,7 +152,7 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 					a->current_keyframe = a->next_keyframe;
 				}
 			}
-			
+			//calculate interpolation factor
 			float interp =  (a->current_time - a->old_time)/length;
 			
 			if (interpolate){
@@ -162,13 +167,17 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 			}
 		} else {
 			//backwards wooo
+			//number of seconds to spend on the frame:
 			float length = skeleton.keyframes[a->current_keyframe].time - skeleton.keyframes[a->prev_keyframe].time;
-			if (a->current_keyframe == 0){
-		
+			if (a->current_keyframe == 0 ||  skeleton.keyframes[a->current_keyframe].time < a->current_time){
+				//run out of keyframes or havent yet reached the first keyframe
 					interpolate = false;
-			} else if (a->old_time - a->current_time > length && a->current_time < skeleton.keyframes[a->current_keyframe].time ) {
-			
-
+					if( skeleton.keyframes[a->current_keyframe].time < a->current_time){
+						//still not at the first keyframe, update the old time
+						a->old_time = a->current_time;
+					}
+			} else if (a->old_time - a->current_time > length) {
+					//switch keyframes
 				a->old_time = a->current_time;
 
 				if (a->prev_keyframe > 0) {
@@ -178,10 +187,12 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 					interpolate = true;
 
 				} else {
+					//no more frames prior to prev_keyframe
 					a->next_keyframe = a->current_keyframe;
 					a->current_keyframe = a->prev_keyframe;
 				}
 			}
+			//interpolation factor
 			float interp = (a->old_time - a->current_time)/length;
 			
 			if (interpolate){
@@ -198,9 +209,7 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 		}
 		changeSkeleton(result);
 	}
-
 	skeleton.refreshCache(&currentQ_);
-
 }
 
 void Mesh::updateAnimation()
