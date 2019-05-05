@@ -289,16 +289,22 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		k.time = pause_time;
 		if (getNumKeyframes() == 0){
 			mesh_->skeleton.keyframes.push_back(k);
+			state->current_keyframe = 0;
 		} else {
 			float current_keyframe_time  = mesh_->skeleton.keyframes[state->current_keyframe].time;
 			if(k.time < current_keyframe_time){
 				mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + state->current_keyframe, k);
 			}else if (k.time > current_keyframe_time){
 				mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + state->current_keyframe + 1, k);
+				state->prev_keyframe = state->current_keyframe;
+				state->current_keyframe = state->current_keyframe + 1;
+				state->next_keyframe = glm::clamp(state->current_keyframe + 1,0,getNumKeyframes()-1);
 			}else {
 				mesh_->skeleton.keyframes[state->current_keyframe] = k;
 			}
 		}
+		
+		state->old_time = pause_time;
 
 		// if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
 		// 	//insert before
@@ -317,18 +323,23 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 
 		if (lightKeyframes.size() == 0){
 			lightKeyframes.push_back(lk);
+			sceneState->current_light_keyframe = 0;
 		} else {
 			float current_keyframe_time  = lightKeyframes[sceneState->current_light_keyframe].time;
 			if(lk.time < current_keyframe_time){
 				lightKeyframes.insert(lightKeyframes.begin() + sceneState->current_light_keyframe, lk);
 			}else if (lk.time > current_keyframe_time){
 				lightKeyframes.insert(lightKeyframes.begin() + sceneState->current_light_keyframe + 1, lk);
+				sceneState->prev_light_keyframe = sceneState->current_light_keyframe;
+				sceneState->current_light_keyframe = sceneState->current_light_keyframe + 1;
+				sceneState->next_light_keyframe = glm::clamp(sceneState->current_light_keyframe + 1,0, (int)lightKeyframes.size()-1);
 			}else {
 				lightKeyframes[sceneState->current_light_keyframe] = lk;
 			}
 		}
 
 		sceneState->end_light_keyframe = lightKeyframes.size() - 1;
+		sceneState->old_time = pause_time;
 	
 	}else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
 		CameraKeyFrame ck;
@@ -339,18 +350,22 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		
 		if (cameraKeyframes.size() == 0){
 			cameraKeyframes.push_back(ck);
+			sceneState->current_camera_keyframe = 0;
 		} else {
 			float current_keyframe_time  = cameraKeyframes[sceneState->current_camera_keyframe].time;
 			if(ck.time < current_keyframe_time){
 				cameraKeyframes.insert(cameraKeyframes.begin() + sceneState->current_camera_keyframe, ck);
 			}else if (ck.time > current_keyframe_time){
 				cameraKeyframes.insert(cameraKeyframes.begin() + sceneState->current_camera_keyframe + 1, ck);
+				sceneState->prev_camera_keyframe = sceneState->current_camera_keyframe;
+				sceneState->current_camera_keyframe = sceneState->current_camera_keyframe + 1;
+				sceneState->next_camera_keyframe = glm::clamp(sceneState->current_camera_keyframe + 1,0, (int)cameraKeyframes.size()-1);
 			}else {
 				cameraKeyframes[sceneState->current_camera_keyframe] = ck;
 			}
 		}
 
-
+		sceneState->old_time2 = pause_time;
 		sceneState->end_camera_keyframe = cameraKeyframes.size() - 1;
 	
 	}else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
@@ -558,13 +573,13 @@ void GUI::updateScene(float t){
 				//forwards
 				float length = lightKeyframes[sceneState->next_light_keyframe].time - lightKeyframes[sceneState->current_light_keyframe].time;
 
-				if ( cur == sceneState->end_light_keyframe){
+				if ( cur == sceneState->end_light_keyframe || length==0){
 
 					interpolate = false;
 
 				} else if (sceneState->current_time - sceneState->old_time > length) {
 
-					sceneState->old_time = sceneState->current_time;
+					sceneState->old_time = min(sceneState->current_time, lightKeyframes[sceneState->end_light_keyframe].time);
 
 					if (sceneState->next_light_keyframe < sceneState->end_light_keyframe) {
 						sceneState->prev_light_keyframe = sceneState->current_light_keyframe;
@@ -572,6 +587,7 @@ void GUI::updateScene(float t){
 						sceneState->next_light_keyframe++;
 						interpolate = true;
 					} else {
+						sceneState->prev_light_keyframe = sceneState->current_light_keyframe;
 						sceneState->current_light_keyframe = sceneState->next_light_keyframe;
 					}
 				}
@@ -587,15 +603,11 @@ void GUI::updateScene(float t){
 				}
 			} else {
 				//backwards
-				cout << "light backwards current keyframe" << sceneState->current_light_keyframe <<  endl;
-				cout << "current time " << sceneState->current_time << " old time " << sceneState->old_time << " keyframe time " << lightKeyframes[sceneState->current_light_keyframe].time<< endl;
 				float length = lightKeyframes[sceneState->current_light_keyframe].time - lightKeyframes[sceneState->prev_light_keyframe].time;
-				cout << "length " << length << endl;
-				if ( sceneState->current_light_keyframe == 0){
-					cout << "in first if" << endl;
+				if ( sceneState->current_light_keyframe == 0 || sceneState->current_time > lightKeyframes[sceneState->current_light_keyframe].time){
 					interpolate = false;
 
-				} else if (sceneState->old_time - sceneState->current_time  >= length || sceneState->current_time <= lightKeyframes[sceneState->prev_light_keyframe].time ) {
+				} else if (sceneState->old_time - sceneState->current_time  > length) {
 					//&& sceneState->current_time <= lightKeyframes[sceneState->prev_light_keyframe].time
 					sceneState->old_time = sceneState->current_time;
 					if (sceneState->prev_light_keyframe > 0) {
@@ -607,8 +619,6 @@ void GUI::updateScene(float t){
 						sceneState->next_light_keyframe = sceneState->current_light_keyframe;
 						sceneState->current_light_keyframe = sceneState->prev_light_keyframe;
 					}
-					cout << "changing keyframes new keyframe " << sceneState->current_light_keyframe << endl;
-
 				}
 				float interp = (sceneState->old_time - sceneState->current_time )/length;
 				if (interpolate){
@@ -619,6 +629,9 @@ void GUI::updateScene(float t){
 					int cp3 = glm::clamp<int>(curframe - 2, 0, lightKeyframes.size() - 1);
 					light_position_ = glm::vec4(lightSpline(cp0,cp1,cp2,cp3, interp),1);
 					light_color_ = glm::mix(lightKeyframes[sceneState->current_light_keyframe].light_color,lightKeyframes[sceneState->prev_light_keyframe].light_color,interp);	
+				}else {
+					light_position_ = lightKeyframes[0].light_pos;
+					light_color_ = lightKeyframes[0].light_color;
 				}
 			}
 		}
@@ -670,7 +683,7 @@ void GUI::updateScene(float t){
 
 					interpolate = false;
 
-				} else if (sceneState->old_time2  -sceneState->current_time > length ) {
+				} else if (sceneState->old_time2  -sceneState->current_time > length  && sceneState->current_time < cameraKeyframes[sceneState->current_camera_keyframe].time) {
 
 					sceneState->old_time2 = sceneState->current_time;
 

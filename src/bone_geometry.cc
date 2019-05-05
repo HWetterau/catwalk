@@ -166,7 +166,7 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 			if (a->current_keyframe == 0){
 		
 					interpolate = false;
-			} else if (a->old_time - a->current_time > length) {
+			} else if (a->old_time - a->current_time > length && a->current_time < skeleton.keyframes[a->current_keyframe].time ) {
 			
 
 				a->old_time = a->current_time;
