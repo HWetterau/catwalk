@@ -314,7 +314,20 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		lk.light_pos = light_position_;
 		lk.light_color = light_color_;
 		lk.time = pause_time;
-		lightKeyframes.push_back(lk);
+
+		if (lightKeyframes.size() == 0){
+			lightKeyframes.push_back(lk);
+		} else {
+			float current_keyframe_time  = lightKeyframes[sceneState->current_light_keyframe].time;
+			if(lk.time < current_keyframe_time){
+				lightKeyframes.insert(lightKeyframes.begin() + sceneState->current_light_keyframe, lk);
+			}else if (lk.time > current_keyframe_time){
+				lightKeyframes.insert(lightKeyframes.begin() + sceneState->current_light_keyframe + 1, lk);
+			}else {
+				lightKeyframes[sceneState->current_light_keyframe] = lk;
+			}
+		}
+
 		sceneState->end_light_keyframe = lightKeyframes.size() - 1;
 	
 	}else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
@@ -323,7 +336,21 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		ck.camera_rot = orientation_;
 		ck.camera_dist = camera_distance_;
 		ck.time = pause_time;
-		cameraKeyframes.push_back(ck);
+		
+		if (cameraKeyframes.size() == 0){
+			cameraKeyframes.push_back(ck);
+		} else {
+			float current_keyframe_time  = cameraKeyframes[sceneState->current_camera_keyframe].time;
+			if(ck.time < current_keyframe_time){
+				cameraKeyframes.insert(cameraKeyframes.begin() + sceneState->current_camera_keyframe, ck);
+			}else if (ck.time > current_keyframe_time){
+				cameraKeyframes.insert(cameraKeyframes.begin() + sceneState->current_camera_keyframe + 1, ck);
+			}else {
+				cameraKeyframes[sceneState->current_camera_keyframe] = ck;
+			}
+		}
+
+
 		sceneState->end_camera_keyframe = cameraKeyframes.size() - 1;
 	
 	}else if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
@@ -426,6 +453,21 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			intensity_ = 0.0;
 		}
 		computeColor();
+	} else if (key == GLFW_KEY_F && (mods & GLFW_MOD_CONTROL)) {
+		if (action == GLFW_RELEASE) {
+			// delete model keyframe that scrubber is over
+		}
+			
+	} else if (key == GLFW_KEY_L && (mods & GLFW_MOD_CONTROL)) {
+		if (action == GLFW_RELEASE) {
+			// delete light keyframe that scrubber is over
+		}
+			
+	} else if (key == GLFW_KEY_V && (mods & GLFW_MOD_CONTROL)) {
+		if (action == GLFW_RELEASE) {
+			// delete camera keyframe that scrubber is over
+		}
+			
 	}
 
 	// FIXME: implement other controls here.
@@ -514,11 +556,13 @@ void GUI::updateScene(float t){
 
 			if(sceneState->old_time < sceneState->current_time){
 				//forwards
+				float length = lightKeyframes[sceneState->next_light_keyframe].time - lightKeyframes[sceneState->current_light_keyframe].time;
+
 				if ( cur == sceneState->end_light_keyframe){
 
 					interpolate = false;
 
-				} else if (sceneState->current_time - sceneState->old_time > (1/fps)) {
+				} else if (sceneState->current_time - sceneState->old_time > length) {
 
 					sceneState->old_time = sceneState->current_time;
 
@@ -531,7 +575,7 @@ void GUI::updateScene(float t){
 						sceneState->current_light_keyframe = sceneState->next_light_keyframe;
 					}
 				}
-				float interp = fps * (sceneState->current_time - sceneState->old_time);
+				float interp = (sceneState->current_time - sceneState->old_time)/length;
 				if (interpolate){
 					int curframe = sceneState->current_light_keyframe;
 					int cp0 = glm::clamp<int>(curframe - 1, 0, lightKeyframes.size() - 1);
@@ -543,14 +587,17 @@ void GUI::updateScene(float t){
 				}
 			} else {
 				//backwards
+				cout << "light backwards current keyframe" << sceneState->current_light_keyframe <<  endl;
+				cout << "current time " << sceneState->current_time << " old time " << sceneState->old_time << " keyframe time " << lightKeyframes[sceneState->current_light_keyframe].time<< endl;
+				float length = lightKeyframes[sceneState->current_light_keyframe].time - lightKeyframes[sceneState->prev_light_keyframe].time;
+				cout << "length " << length << endl;
 				if ( sceneState->current_light_keyframe == 0){
-
+					cout << "in first if" << endl;
 					interpolate = false;
 
-				} else if (sceneState->old_time - sceneState->current_time  > (1/fps)) {
-
+				} else if (sceneState->old_time - sceneState->current_time  >= length || sceneState->current_time <= lightKeyframes[sceneState->prev_light_keyframe].time ) {
+					//&& sceneState->current_time <= lightKeyframes[sceneState->prev_light_keyframe].time
 					sceneState->old_time = sceneState->current_time;
-
 					if (sceneState->prev_light_keyframe > 0) {
 						sceneState->next_light_keyframe = sceneState->current_light_keyframe;
 						sceneState->current_light_keyframe = sceneState->prev_light_keyframe;
@@ -560,8 +607,10 @@ void GUI::updateScene(float t){
 						sceneState->next_light_keyframe = sceneState->current_light_keyframe;
 						sceneState->current_light_keyframe = sceneState->prev_light_keyframe;
 					}
+					cout << "changing keyframes new keyframe " << sceneState->current_light_keyframe << endl;
+
 				}
-				float interp = fps * (sceneState->old_time - sceneState->current_time );
+				float interp = (sceneState->old_time - sceneState->current_time )/length;
 				if (interpolate){
 					int curframe = sceneState->current_light_keyframe;
 					int cp0 = glm::clamp<int>(curframe + 1, 0, lightKeyframes.size() - 1);
@@ -582,12 +631,13 @@ void GUI::updateScene(float t){
 
 			if(sceneState->old_time2 < sceneState->current_time) {
 					//forwards
+				float length = cameraKeyframes[sceneState->next_camera_keyframe].time - cameraKeyframes[sceneState->current_camera_keyframe].time;
 				
 				if ( cur == sceneState->end_camera_keyframe){
 
 					interpolate = false;
 
-				} else if (sceneState->current_time - sceneState->old_time2 > (1/fps)) {
+				} else if (sceneState->current_time - sceneState->old_time2 > length) {
 
 					sceneState->old_time2 = sceneState->current_time;
 
@@ -601,7 +651,7 @@ void GUI::updateScene(float t){
 						sceneState->current_camera_keyframe = sceneState->next_camera_keyframe;
 					}
 				}
-				float interp = fps * (sceneState->current_time - sceneState->old_time2);
+				float interp = (sceneState->current_time - sceneState->old_time2) / length;
 				if (interpolate){
 					int curframe = sceneState->current_camera_keyframe;
 					int cp0 = glm::clamp<int>(curframe - 1, 0, cameraKeyframes.size() - 1);
@@ -615,11 +665,12 @@ void GUI::updateScene(float t){
 				}
 			} else {
 				//backwards
+				float length = cameraKeyframes[sceneState->current_camera_keyframe].time - cameraKeyframes[sceneState->prev_camera_keyframe].time;
 				if ( cur == 0){
 
 					interpolate = false;
 
-				} else if (sceneState->old_time2  -sceneState->current_time > (1/fps)) {
+				} else if (sceneState->old_time2  -sceneState->current_time > length ) {
 
 					sceneState->old_time2 = sceneState->current_time;
 
@@ -633,7 +684,7 @@ void GUI::updateScene(float t){
 						sceneState->current_camera_keyframe = sceneState->prev_camera_keyframe;
 					}
 				}
-				float interp = fps * (sceneState->old_time2 - sceneState->current_time );
+				float interp = (sceneState->old_time2 - sceneState->current_time )/length;
 				if (interpolate){
 					int curframe = sceneState->current_camera_keyframe;
 					int cp0 = glm::clamp<int>(curframe + 1, 0, cameraKeyframes.size() - 1);
