@@ -280,6 +280,63 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		current_bone_ %= mesh_->getNumberOfBones();
 	} else if (key == GLFW_KEY_T && action != GLFW_RELEASE) {
 		transparent_ = !transparent_;
+
+	} else if (key == GLFW_KEY_F && (mods & GLFW_MOD_CONTROL)) {
+		if (action == GLFW_RELEASE) {
+			// delete model keyframe that scrubber is over
+			if(getNumKeyframes() > 0) {
+				if(state->current_time >= mesh_->skeleton.keyframes[state->current_keyframe].time){
+					//forwards
+					mesh_->skeleton.keyframes.erase(mesh_->skeleton.keyframes.begin() + state->current_keyframe);
+				}else {
+					mesh_->skeleton.keyframes.erase(mesh_->skeleton.keyframes.begin() + state->prev_keyframe);
+				}
+				//texture_locations.erase(texture_locations.begin() + selected_frame);
+				state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
+				if(state->next_keyframe > state->end_keyframe) {
+					state->current_keyframe = state->end_keyframe;
+					state->next_keyframe = state->end_keyframe;
+				}
+			}
+		}		
+	} else if (key == GLFW_KEY_L && (mods & GLFW_MOD_CONTROL)) {
+		if (action == GLFW_RELEASE) {
+			// delete light keyframe that scrubber is over
+			if((int)lightKeyframes.size() > 0) {
+				if(sceneState->current_time >= lightKeyframes[sceneState->current_light_keyframe].time){
+					//forwards
+					lightKeyframes.erase(lightKeyframes.begin() + sceneState->current_light_keyframe);
+				}else {
+					lightKeyframes.erase(lightKeyframes.begin() + sceneState->prev_light_keyframe);
+				}
+				//texture_locations.erase(texture_locations.begin() + selected_frame);
+				sceneState->end_light_keyframe = lightKeyframes.size()-1;
+				if(sceneState->next_light_keyframe > sceneState->end_light_keyframe) {
+					sceneState->current_light_keyframe = sceneState->end_light_keyframe;
+					sceneState->next_light_keyframe = sceneState->end_light_keyframe;
+				}
+			}
+		}
+			
+	} else if (key == GLFW_KEY_V && (mods & GLFW_MOD_CONTROL)) {
+		if (action == GLFW_RELEASE) {
+			// delete camera keyframe that scrubber is over
+			if((int)cameraKeyframes.size() > 0) {
+				if(sceneState->current_time >= cameraKeyframes[sceneState->current_camera_keyframe].time){
+					//forwards
+					cameraKeyframes.erase(cameraKeyframes.begin() + sceneState->current_camera_keyframe);
+				}else {
+					cameraKeyframes.erase(cameraKeyframes.begin() + sceneState->prev_camera_keyframe);
+				}
+				//texture_locations.erase(texture_locations.begin() + selected_frame);
+				sceneState->end_camera_keyframe = cameraKeyframes.size()-1;
+				if(sceneState->next_camera_keyframe > sceneState->end_camera_keyframe) {
+					sceneState->current_camera_keyframe = sceneState->end_camera_keyframe;
+					sceneState->next_camera_keyframe = sceneState->end_camera_keyframe;
+				}
+			}
+		}
+			
 	} else if (key == GLFW_KEY_F && action == GLFW_RELEASE) {
 		//create a keyframe
 		KeyFrame k;
@@ -292,15 +349,18 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			state->current_keyframe = 0;
 		} else {
 			float current_keyframe_time  = mesh_->skeleton.keyframes[state->current_keyframe].time;
-			if(k.time < current_keyframe_time){
+			if (k.time >= current_keyframe_time && k.time < current_keyframe_time + 0.5) {
+				mesh_->skeleton.keyframes[state->current_keyframe] = k;
+			} else if (k.time >= mesh_->skeleton.keyframes[state->prev_keyframe].time && k.time < mesh_->skeleton.keyframes[state->prev_keyframe].time + 0.5) {
+				//backwards replace
+				mesh_->skeleton.keyframes[state->prev_keyframe] = k;
+			} else if(k.time < current_keyframe_time){
 				mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + state->current_keyframe, k);
-			}else if (k.time > current_keyframe_time){
+			} else if (k.time > current_keyframe_time){
 				mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + state->current_keyframe + 1, k);
 				state->prev_keyframe = state->current_keyframe;
 				state->current_keyframe = state->current_keyframe + 1;
 				state->next_keyframe = glm::clamp(state->current_keyframe + 1,0,getNumKeyframes()-1);
-			}else {
-				mesh_->skeleton.keyframes[state->current_keyframe] = k;
 			}
 		}
 		
@@ -326,15 +386,21 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			sceneState->current_light_keyframe = 0;
 		} else {
 			float current_keyframe_time  = lightKeyframes[sceneState->current_light_keyframe].time;
-			if(lk.time < current_keyframe_time){
+			 if (lk.time >= current_keyframe_time && lk.time < current_keyframe_time + 0.5) {
+				//forwards replace
+				lightKeyframes[sceneState->current_light_keyframe] = lk;
+			} else if (lk.time >= lightKeyframes[sceneState->prev_light_keyframe].time && lk.time < lightKeyframes[sceneState->prev_light_keyframe].time + 0.5) {
+				//backwards replace
+				lightKeyframes[sceneState->prev_light_keyframe] = lk;
+			}else if(lk.time < current_keyframe_time){
+				//insert before current keyframe
 				lightKeyframes.insert(lightKeyframes.begin() + sceneState->current_light_keyframe, lk);
-			}else if (lk.time > current_keyframe_time){
+			} else if (lk.time > current_keyframe_time){
+				//insert after current keyframe
 				lightKeyframes.insert(lightKeyframes.begin() + sceneState->current_light_keyframe + 1, lk);
 				sceneState->prev_light_keyframe = sceneState->current_light_keyframe;
 				sceneState->current_light_keyframe = sceneState->current_light_keyframe + 1;
 				sceneState->next_light_keyframe = glm::clamp(sceneState->current_light_keyframe + 1,0, (int)lightKeyframes.size()-1);
-			}else {
-				lightKeyframes[sceneState->current_light_keyframe] = lk;
 			}
 		}
 
@@ -353,15 +419,18 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			sceneState->current_camera_keyframe = 0;
 		} else {
 			float current_keyframe_time  = cameraKeyframes[sceneState->current_camera_keyframe].time;
-			if(ck.time < current_keyframe_time){
+			if (ck.time >= current_keyframe_time && ck.time < current_keyframe_time + 0.5) {
+				cameraKeyframes[sceneState->current_camera_keyframe] = ck;
+			} else if (ck.time >= cameraKeyframes[sceneState->prev_camera_keyframe].time && ck.time < cameraKeyframes[sceneState->prev_camera_keyframe].time + 0.5) {
+				//backwards replace
+				cameraKeyframes[sceneState->prev_camera_keyframe] = ck;
+			} else if(ck.time < current_keyframe_time){
 				cameraKeyframes.insert(cameraKeyframes.begin() + sceneState->current_camera_keyframe, ck);
-			}else if (ck.time > current_keyframe_time){
+			} else if (ck.time > current_keyframe_time){
 				cameraKeyframes.insert(cameraKeyframes.begin() + sceneState->current_camera_keyframe + 1, ck);
 				sceneState->prev_camera_keyframe = sceneState->current_camera_keyframe;
 				sceneState->current_camera_keyframe = sceneState->current_camera_keyframe + 1;
 				sceneState->next_camera_keyframe = glm::clamp(sceneState->current_camera_keyframe + 1,0, (int)cameraKeyframes.size()-1);
-			}else {
-				cameraKeyframes[sceneState->current_camera_keyframe] = ck;
 			}
 		}
 
@@ -468,22 +537,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 			intensity_ = 0.0;
 		}
 		computeColor();
-	} else if (key == GLFW_KEY_F && (mods & GLFW_MOD_CONTROL)) {
-		if (action == GLFW_RELEASE) {
-			// delete model keyframe that scrubber is over
-		}
-			
-	} else if (key == GLFW_KEY_L && (mods & GLFW_MOD_CONTROL)) {
-		if (action == GLFW_RELEASE) {
-			// delete light keyframe that scrubber is over
-		}
-			
-	} else if (key == GLFW_KEY_V && (mods & GLFW_MOD_CONTROL)) {
-		if (action == GLFW_RELEASE) {
-			// delete camera keyframe that scrubber is over
-		}
-			
-	}
+	} 
 
 	// FIXME: implement other controls here.
 }
