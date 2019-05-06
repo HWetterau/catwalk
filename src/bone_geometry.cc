@@ -49,7 +49,6 @@ void Skeleton::refreshCache(Configuration* target)
 	target->rot.resize(joints.size());
 	target->trans.resize(joints.size());
 	for (size_t i = 0; i < joints.size(); i++) {
-		//target->rot[i] = joints[i].orientation;
 		target->rot[i] = glm::quat_cast(glm::mat3(joints[i].d));
 		target->trans[i] = joints[i].position;
 
@@ -121,7 +120,6 @@ void Mesh::updateAnimation(float t, AnimationState* a)
 	if (t != -1 && skeleton.keyframes.size() > 0) {
 
 		a->current_time = t;
-		//float fps = 1.0;
 		bool interpolate = true;
 		KeyFrame result;
 		if(a->current_time > a->old_time){

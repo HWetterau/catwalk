@@ -26,7 +26,7 @@
 
 using namespace std;
 
-int window_width = 1280;
+int window_width = 960;
 int window_height = 960;
 int main_view_width = 960;
 int main_view_height = 720;
@@ -34,7 +34,6 @@ int timeline_height = window_height - main_view_height;
 int timeline_chunk_height = timeline_height/3;
 int preview_width = window_width - main_view_width; // 320
 int preview_height = preview_width / 4 * 3; // 320 / 4 * 3 = 240
-//int preview_height = window_height - main_view_height;
 int preview_bar_width = preview_width;
 int preview_bar_height = main_view_height;
 const std::string window_title = "Animation";
@@ -472,7 +471,7 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kQuadVao][0]));
 
 	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kQuadVao][kVertexBuffer]));
-	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+	
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * quad_vertices.size() * 4, quad_vertices.data(),
 				GL_STATIC_DRAW));
@@ -523,7 +522,6 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kSelectVao][0]));
 	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kSelectVao][kVertexBuffer]));
 
-	// NOTE: We do not send anything right now, we just describe it to OpenGL.
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * select_vertices.size() * 4, select_vertices.data(),
 				GL_STATIC_DRAW));
@@ -579,15 +577,12 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kLightVao][0]));
 	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kLightVao][kVertexBuffer]));
 
-	// NOTE: We do not send anything right now, we just describe it to OpenGL.
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * light_vertices.size() * 4, light_vertices.data(),
 				GL_STATIC_DRAW));
 
 	CHECK_GL_ERROR(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0));
 	CHECK_GL_ERROR(glEnableVertexAttribArray(0));
-
-	//do we need faces? yes
 
 	CHECK_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,g_buffer_objects[kLightVao][kIndexBuffer]));
 	CHECK_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
@@ -630,13 +625,13 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glShaderSource(timeline_fragment_shader_id, 1, &timeline_fragment_shader, nullptr));
 	glCompileShader(timeline_fragment_shader_id);
 	CHECK_GL_SHADER_ERROR(timeline_fragment_shader_id);
-	//generate vaos!!!
+
 	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kTimelineVao]));
 
 	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kTimelineVao][0]));
 
 	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kTimelineVao][kVertexBuffer]));
-	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * quad_vertices.size() * 4, quad_vertices.data(),
 				GL_STATIC_DRAW));
@@ -690,9 +685,6 @@ int main(int argc, char* argv[])
 
 	stbi_image_free(data);
 
-
-	
-
 	GLuint scrub_vertex_shader_id = 0;
 	CHECK_GL_ERROR(scrub_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER));
 	CHECK_GL_ERROR(glShaderSource(scrub_vertex_shader_id, 1, &scrub_vertex_shader, nullptr));
@@ -711,7 +703,7 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kScrubVao][0]));
 
 	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kScrubVao][kVertexBuffer]));
-	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * scrub_vertices.size() * 4, scrub_vertices.data(),
 				GL_STATIC_DRAW));
@@ -761,7 +753,7 @@ int main(int argc, char* argv[])
 	CHECK_GL_ERROR(glGenBuffers(kNumVbos, &g_buffer_objects[kBoxVao][0]));
 
 	CHECK_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, g_buffer_objects[kBoxVao][kVertexBuffer]));
-	// NOTE: We do not send anything right now, we just describe it to OpenGL.
+
 	CHECK_GL_ERROR(glBufferData(GL_ARRAY_BUFFER,
 				sizeof(float) * box_vertices.size() * 4, box_vertices.data(),
 				GL_STATIC_DRAW));
@@ -808,108 +800,108 @@ int main(int argc, char* argv[])
 
 
 	if (argc >= 3) {
-		mesh.loadAnimationFrom(argv[2]);
+		gui.loadAnimationFrom(argv[2]);
 		gui.getAnimationState()->end_keyframe = mesh.skeleton.keyframes.size()-1;
 
-		//load textures
-		glfwGetFramebufferSize(window, &window_width, &window_height);
-		glViewport(0, 0, main_view_width, main_view_height);
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_MULTISAMPLE);
-		glEnable(GL_BLEND);
-		glEnable(GL_CULL_FACE);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDepthFunc(GL_LESS);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glCullFace(GL_BACK);
+	// 	//load textures
+	// 	glfwGetFramebufferSize(window, &window_width, &window_height);
+	// 	glViewport(0, 0, main_view_width, main_view_height);
+	// 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	// 	glEnable(GL_DEPTH_TEST);
+	// 	glEnable(GL_MULTISAMPLE);
+	// 	glEnable(GL_BLEND);
+	// 	glEnable(GL_CULL_FACE);
+	// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// 	glDepthFunc(GL_LESS);
+	// 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// 	glCullFace(GL_BACK);
 
-		gui.updateMatrices();
-		mats = gui.getMatrixPointers();
+	// 	gui.updateMatrices();
+	// 	mats = gui.getMatrixPointers();
 
-		for(int k = 0; k < (int)mesh.skeleton.keyframes.size(); ++k) {
-			mesh.changeSkeleton(mesh.skeleton.keyframes[k]);
-			mesh.updateAnimation();
+	// 	for(int k = 0; k < (int)mesh.skeleton.keyframes.size(); ++k) {
+	// 		mesh.changeSkeleton(mesh.skeleton.keyframes[k]);
+	// 		mesh.updateAnimation();
 
-			GLuint FramebufferName = 0;
-			glGenFramebuffers(1, &FramebufferName);
-			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+	// 		GLuint FramebufferName = 0;
+	// 		glGenFramebuffers(1, &FramebufferName);
+	// 		glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 
-			GLuint renderedTexture;
-			glGenTextures(1, &renderedTexture);
-			glBindTexture(GL_TEXTURE_2D, renderedTexture);
+	// 		GLuint renderedTexture;
+	// 		glGenTextures(1, &renderedTexture);
+	// 		glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
-			gui.addTexture(renderedTexture);
+	// 		gui.addTexture(renderedTexture);
 
-			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	// 		glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+	// 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-			GLuint depthrenderbuffer;
-			glGenRenderbuffers(1, &depthrenderbuffer);
-			glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, main_view_width, main_view_height);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+	// 		GLuint depthrenderbuffer;
+	// 		glGenRenderbuffers(1, &depthrenderbuffer);
+	// 		glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+	// 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, main_view_width, main_view_height);
+	// 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
-			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-			glDrawBuffers(1, DrawBuffers);
+	// 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+	// 		GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+	// 		glDrawBuffers(1, DrawBuffers);
 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-			glViewport(0,0,main_view_width,main_view_height);
+	// 		glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+	// 		glViewport(0,0,main_view_width,main_view_height);
 
-			int current_bone = gui.getCurrentBone();
+	// 		int current_bone = gui.getCurrentBone();
 
-			// Draw bones first.
-			if (draw_skeleton && gui.isTransparent()) {
-				bone_pass.setup();
-				// Draw our lines.
-				// FIXME: you need setup skeleton.joints properly in
-				//        order to see the bones.
-				CHECK_GL_ERROR(glDrawElements(GL_LINES,
-											bone_indices.size() * 2,
-											GL_UNSIGNED_INT, 0));
+	// 		// Draw bones first.
+	// 		if (draw_skeleton && gui.isTransparent()) {
+	// 			bone_pass.setup();
+	// 			// Draw our lines.
+	// 			// FIXME: you need setup skeleton.joints properly in
+	// 			//        order to see the bones.
+	// 			CHECK_GL_ERROR(glDrawElements(GL_LINES,
+	// 										bone_indices.size() * 2,
+	// 										GL_UNSIGNED_INT, 0));
 
-			}
-			draw_cylinder = (current_bone != -1 && gui.isTransparent());
-			if (draw_cylinder) {
-				cylinder_pass.setup();
-				CHECK_GL_ERROR(glDrawElements(GL_LINES,
-											cylinder_mesh.indices.size() * 2,
-											GL_UNSIGNED_INT, 0));
-				axes_pass.setup();
-				CHECK_GL_ERROR(glDrawElements(GL_LINES,
-											axes_mesh.indices.size() * 2,
-											GL_UNSIGNED_INT, 0));
-			}
+	// 		}
+	// 		draw_cylinder = (current_bone != -1 && gui.isTransparent());
+	// 		if (draw_cylinder) {
+	// 			cylinder_pass.setup();
+	// 			CHECK_GL_ERROR(glDrawElements(GL_LINES,
+	// 										cylinder_mesh.indices.size() * 2,
+	// 										GL_UNSIGNED_INT, 0));
+	// 			axes_pass.setup();
+	// 			CHECK_GL_ERROR(glDrawElements(GL_LINES,
+	// 										axes_mesh.indices.size() * 2,
+	// 										GL_UNSIGNED_INT, 0));
+	// 		}
 
-			// Then draw floor.
-			if (draw_floor) {
-				floor_pass.setup();
-				// Draw our triangles.
-				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES,
-											floor_faces.size() * 3,
-											GL_UNSIGNED_INT, 0));
-			}
+	// 		// Then draw floor.
+	// 		if (draw_floor) {
+	// 			floor_pass.setup();
+	// 			// Draw our triangles.
+	// 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES,
+	// 										floor_faces.size() * 3,
+	// 										GL_UNSIGNED_INT, 0));
+	// 		}
 
-			// Draw the model
-			if (draw_object) {
-				object_pass.setup();
-				int mid = 0;
-				while (object_pass.renderWithMaterial(mid))
-					mid++;
+	// 		// Draw the model
+	// 		if (draw_object) {
+	// 			object_pass.setup();
+	// 			int mid = 0;
+	// 			while (object_pass.renderWithMaterial(mid))
+	// 				mid++;
 
-			}
+	// 		}
 
-			glBindFramebuffer(GL_FRAMEBUFFER,0);
-			glClear(GL_COLOR_BUFFER_BIT);
-		}
-		if(mesh.skeleton.keyframes.size() > 0){
-			mesh.changeSkeleton(mesh.skeleton.keyframes[0]);
-			mesh.updateAnimation();
-		}
+	// 		glBindFramebuffer(GL_FRAMEBUFFER,0);
+	// 		glClear(GL_COLOR_BUFFER_BIT);
+	// 	}
+	// 	if(mesh.skeleton.keyframes.size() > 0){
+	// 		mesh.changeSkeleton(mesh.skeleton.keyframes[0]);
+	// 		mesh.updateAnimation();
+	// 	}
 	}
 
 
@@ -929,7 +921,6 @@ int main(int argc, char* argv[])
 
 		gui.updateMatrices();
 		mats = gui.getMatrixPointers();
-		//cout<<"used eye "<<glm::to_string(gui.getView())<<endl;
 	
 #if 0
 		std::cerr << model_data() << '\n';
@@ -969,86 +960,86 @@ int main(int argc, char* argv[])
 
 		//cout<<glm::to_string(gui.getCamera())<<endl;
 
-		if(gui.saveTexture()) {
+		// if(gui.saveTexture()) {
 			
-			GLuint FramebufferName = 0;
-			glGenFramebuffers(1, &FramebufferName);
-			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+		// 	GLuint FramebufferName = 0;
+		// 	glGenFramebuffers(1, &FramebufferName);
+		// 	glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 
-			GLuint renderedTexture;
-			glGenTextures(1, &renderedTexture);
-			glBindTexture(GL_TEXTURE_2D, renderedTexture);
+		// 	GLuint renderedTexture;
+		// 	glGenTextures(1, &renderedTexture);
+		// 	glBindTexture(GL_TEXTURE_2D, renderedTexture);
 
-			gui.addTexture(renderedTexture);
+		// 	gui.addTexture(renderedTexture);
 
-			glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		// 	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, main_view_width, main_view_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+		// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-			GLuint depthrenderbuffer;
-			glGenRenderbuffers(1, &depthrenderbuffer);
-			glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, main_view_width, main_view_height);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+		// 	GLuint depthrenderbuffer;
+		// 	glGenRenderbuffers(1, &depthrenderbuffer);
+		// 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+		// 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, main_view_width, main_view_height);
+		// 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
-			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-			glDrawBuffers(1, DrawBuffers);
+		// 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+		// 	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		// 	glDrawBuffers(1, DrawBuffers);
 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-			glViewport(0,0,main_view_width,main_view_height);
+		// 	glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+		// 	glViewport(0,0,main_view_width,main_view_height);
 			
 
-			int current_bone = gui.getCurrentBone();
+		// 	int current_bone = gui.getCurrentBone();
 
-			// Draw bones first.
-			if (draw_skeleton && gui.isTransparent()) {
-				bone_pass.setup();
-				// Draw our lines.
-				// FIXME: you need setup skeleton.joints properly in
-				//        order to see the bones.
-				CHECK_GL_ERROR(glDrawElements(GL_LINES,
-											bone_indices.size() * 2,
-											GL_UNSIGNED_INT, 0));
-			}
-			draw_cylinder = (current_bone != -1 && gui.isTransparent());
-			if (draw_cylinder) {
-				cylinder_pass.setup();
-				CHECK_GL_ERROR(glDrawElements(GL_LINES,
-											cylinder_mesh.indices.size() * 2,
-											GL_UNSIGNED_INT, 0));
-				axes_pass.setup();
-				CHECK_GL_ERROR(glDrawElements(GL_LINES,
-											axes_mesh.indices.size() * 2,
-											GL_UNSIGNED_INT, 0));
-			}
+		// 	// Draw bones first.
+		// 	if (draw_skeleton && gui.isTransparent()) {
+		// 		bone_pass.setup();
+		// 		// Draw our lines.
+		// 		// FIXME: you need setup skeleton.joints properly in
+		// 		//        order to see the bones.
+		// 		CHECK_GL_ERROR(glDrawElements(GL_LINES,
+		// 									bone_indices.size() * 2,
+		// 									GL_UNSIGNED_INT, 0));
+		// 	}
+		// 	draw_cylinder = (current_bone != -1 && gui.isTransparent());
+		// 	if (draw_cylinder) {
+		// 		cylinder_pass.setup();
+		// 		CHECK_GL_ERROR(glDrawElements(GL_LINES,
+		// 									cylinder_mesh.indices.size() * 2,
+		// 									GL_UNSIGNED_INT, 0));
+		// 		axes_pass.setup();
+		// 		CHECK_GL_ERROR(glDrawElements(GL_LINES,
+		// 									axes_mesh.indices.size() * 2,
+		// 									GL_UNSIGNED_INT, 0));
+		// 	}
 
-			// Then draw floor.
-			if (draw_floor) {
-				floor_pass.setup();
-				// Draw our triangles.
-				CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES,
-											floor_faces.size() * 3,
-											GL_UNSIGNED_INT, 0));
-			}
+		// 	// Then draw floor.
+		// 	if (draw_floor) {
+		// 		floor_pass.setup();
+		// 		// Draw our triangles.
+		// 		CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES,
+		// 									floor_faces.size() * 3,
+		// 									GL_UNSIGNED_INT, 0));
+		// 	}
 
-			// Draw the model
-			if (draw_object) {
-				object_pass.setup();
-				int mid = 0;
-				while (object_pass.renderWithMaterial(mid))
-					mid++;
+		// 	// Draw the model
+		// 	if (draw_object) {
+		// 		object_pass.setup();
+		// 		int mid = 0;
+		// 		while (object_pass.renderWithMaterial(mid))
+		// 			mid++;
 
-			}
+		// 	}
 
-			glBindFramebuffer(GL_FRAMEBUFFER,0);
-			glClear(GL_COLOR_BUFFER_BIT);
-			gui.resetTexture();
+		// 	glBindFramebuffer(GL_FRAMEBUFFER,0);
+		// 	glClear(GL_COLOR_BUFFER_BIT);
+		// 	gui.resetTexture();
 
 
-		}
+		// }
 
 		int current_bone = gui.getCurrentBone();
 
@@ -1117,40 +1108,42 @@ int main(int argc, char* argv[])
 #endif
 		}
 		
-		glViewport(main_view_width, timeline_height, preview_width, main_view_height);
-		vector<GLuint> texture_locs = gui.getTextureLocs();
-		glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
-		for (int quad = 0; quad < (int) texture_locs.size(); ++quad) {
-		//glViewport(main_view_width, main_view_height - (quad + 1) *preview_height, preview_width, preview_height);
+		// glViewport(main_view_width, timeline_height, preview_width, main_view_height);
+		// vector<GLuint> texture_locs = gui.getTextureLocs();
+		// glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
+		// for (int quad = 0; quad < (int) texture_locs.size(); ++quad) {
+		// //glViewport(main_view_width, main_view_height - (quad + 1) *preview_height, preview_width, preview_height);
 
-			GLuint text0 = texture_locs[quad];
-			glm::vec2 offset = glm::vec2(0,-2*quad + 2 - gui.getScrollOffset());
+		// 	GLuint text0 = texture_locs[quad];
+		// 	glm::vec2 offset = glm::vec2(0,-2*quad + 2 - gui.getScrollOffset());
 			
-			//draw a quad
-			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kQuadVao]));
-			CHECK_GL_ERROR(glUseProgram(quad_program_id));
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, text0);
-			CHECK_GL_ERROR(	glUniform1i(quad_texture_location, 0));
-			CHECK_GL_ERROR(	glUniformMatrix4fv(quad_ortho_location, 1, GL_FALSE, &proj[0][0]));
-			CHECK_GL_ERROR(	glUniform2fv(quad_offset_location, 1, &offset[0]));
-			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
+		// 	//draw a quad
+		// 	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kQuadVao]));
+		// 	CHECK_GL_ERROR(glUseProgram(quad_program_id));
+		// 	glActiveTexture(GL_TEXTURE0);
+		// 	glBindTexture(GL_TEXTURE_2D, text0);
+		// 	CHECK_GL_ERROR(	glUniform1i(quad_texture_location, 0));
+		// 	CHECK_GL_ERROR(	glUniformMatrix4fv(quad_ortho_location, 1, GL_FALSE, &proj[0][0]));
+		// 	CHECK_GL_ERROR(	glUniform2fv(quad_offset_location, 1, &offset[0]));
+		// 	CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, quad_faces.size() * 3, GL_UNSIGNED_INT, 0));
 
 
-		}
-		int frameIndex = gui.getSelectedFrame();
-		if (frameIndex >= 0 && frameIndex < gui.getNumKeyframes()){
-			glm::vec2 offset = glm::vec2(0,-2*frameIndex + 2 - gui.getScrollOffset());
-			CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kSelectVao]));
-			CHECK_GL_ERROR(glUseProgram(select_program_id));
-			CHECK_GL_ERROR(	glUniformMatrix4fv(select_ortho_location, 1, GL_FALSE, &proj[0][0]));
-			CHECK_GL_ERROR(	glUniform2fv(select_offset_location, 1, &offset[0]));
-			CHECK_GL_ERROR(	glUniform1i(select_cursor_location, gui.getCursor() ));
-			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, select_indices.size() * 3, GL_UNSIGNED_INT, 0));
+		// }
+		// int frameIndex = gui.getSelectedFrame();
+		// if (frameIndex >= 0 && frameIndex < gui.getNumKeyframes()){
+		// 	glm::vec2 offset = glm::vec2(0,-2*frameIndex + 2 - gui.getScrollOffset());
+		// 	CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kSelectVao]));
+		// 	CHECK_GL_ERROR(glUseProgram(select_program_id));
+		// 	CHECK_GL_ERROR(	glUniformMatrix4fv(select_ortho_location, 1, GL_FALSE, &proj[0][0]));
+		// 	CHECK_GL_ERROR(	glUniform2fv(select_offset_location, 1, &offset[0]));
+		// 	CHECK_GL_ERROR(	glUniform1i(select_cursor_location, gui.getCursor() ));
+		// 	CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, select_indices.size() * 3, GL_UNSIGNED_INT, 0));
 
-		}
+		// }
+
 		// switch to drawing the timeline
 		glViewport(0, main_view_height, main_view_width, timeline_height);
+		glm::mat4 proj = glm::ortho(-1.0f,1.0f,-3.0f,3.0f);
 		glm::mat4 timeline_proj = glm::ortho(-1.0f,1.0f,-1.0f,1.0f);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, timeline_texture);
@@ -1207,10 +1200,6 @@ int main(int argc, char* argv[])
 			CHECK_GL_ERROR(	glUniform4fv(box_color_location, 1, &camera_color[0]));
 			CHECK_GL_ERROR(glDrawElements(GL_TRIANGLES, box_faces.size() * 3, GL_UNSIGNED_INT, 0));
 		}
-
-
-
-
 
 		CHECK_GL_ERROR(glBindVertexArray(g_array_objects[kScrubVao]));
 		CHECK_GL_ERROR(glUseProgram(scrub_program_id));

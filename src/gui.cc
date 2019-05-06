@@ -18,43 +18,6 @@ namespace {
 }
 using namespace std;
 
-bool sphereIntersect(glm::dvec3 p, glm::dvec3 dir, double& t)
-{
-	
-	glm::dvec3 oc = -p;
-	double a = glm::dot(dir,dir);
-	double b = 2.0* glm::dot(oc, dir);
-	double c = glm::dot(oc,oc)-1;
-	double discriminant = b * b - 4 * a * c;
-	// double b = glm::dot(v, dir);
-	// double discriminant = b*b - glm::dot(v,v) + 1;
-
-	if( discriminant < 0.0 ) {
-		return false;
-	}
-
-	discriminant = sqrt( discriminant );
-	double t2 = b + discriminant;
-
-	if( t2 <= 0.0001 ) {
-		return false;
-	}
-
-	
-	double t1 = b - discriminant;
-
-	if( t1 > 0.0001) {
-		t = t1;
-	} else {
-		t = t2;
-	}
-
-	return true;
-}
-
-
-
-
 bool intersectBody(glm::dvec3& p, glm::dvec3& dir, double& t, double height){
 	double x0 = p[0];
 	double y0 = p[1];
@@ -165,7 +128,6 @@ bool intersectLocal(glm::dvec3 p, glm::dvec3 dir, double& t, double height){
 	}
 }
 
-//GUI gui(window, main_view_width, main_view_height, timeline_height, preview_height);
 
 GUI::GUI(GLFWwindow* window, int view_width, int view_height, int timeline_height, int preview_height)
 	:window_(window), preview_height_(preview_height), timeline_height_(timeline_height)
@@ -247,7 +209,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 	}
 	if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL)) {
 		if (action == GLFW_RELEASE)
-			mesh_->saveAnimationTo("animation.json");
+			saveAnimationTo("animation.json");
 		return ;
 	}
 
@@ -265,7 +227,6 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		pose_changed_ = true;
 
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
-		//fps_mode_ = !fps_mode_;
 		color++; 
 		color = color % NUMCOLORS;
 		computeColor();
@@ -366,12 +327,6 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		
 		state->old_time = pause_time;
 
-		// if (cursor && selected_frame != -1 && selected_frame < getNumKeyframes()) {
-		// 	//insert before
-		// 	mesh_->skeleton.keyframes.insert(mesh_->skeleton.keyframes.begin() + selected_frame, k);
-		// } else {
-		// 	mesh_->skeleton.keyframes.push_back(k);
-		// }
 		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
 		save_texture_ = true;
 
@@ -470,58 +425,61 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		pause_time = 0;
 		play_start = chrono::steady_clock::now();
 
-	} else if (key == GLFW_KEY_PAGE_UP && action == GLFW_RELEASE) {
-		if( selected_frame > 0) {
-			selected_frame--;
-		}
-	} else if (key == GLFW_KEY_PAGE_DOWN && action == GLFW_RELEASE) {
-		if (selected_frame != -1 && selected_frame < getNumKeyframes() -1){
-			selected_frame++;
-		}
-	} else if (key == GLFW_KEY_U && action == GLFW_RELEASE) {
-		//update
-		if(selected_frame != -1 && selected_frame < getNumKeyframes()) {
-			KeyFrame k;
-			for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
-				k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
-			}
-			//k.light_pos = light_position_;
-			//k.camera_pos = eye_;
-			//k.camera_pos = rel_pos;
-			// k.camera_rot = orientation_;
-			// k.light_color = light_color_;
-			// k.camera_dist = camera_distance_;
-			mesh_->skeleton.keyframes[selected_frame] = k;
-			replace_texture = selected_frame;
-			save_texture_ = true;
-		}
+	} 
+	// else if (key == GLFW_KEY_PAGE_UP && action == GLFW_RELEASE) {
+	// 	if( selected_frame > 0) {
+	// 		selected_frame--;
+	// 	}
+	// } else if (key == GLFW_KEY_PAGE_DOWN && action == GLFW_RELEASE) {
+	// 	if (selected_frame != -1 && selected_frame < getNumKeyframes() -1){
+	// 		selected_frame++;
+	// 	}
+	// } else if (key == GLFW_KEY_U && action == GLFW_RELEASE) {
+	// 	//update
+	// 	if(selected_frame != -1 && selected_frame < getNumKeyframes()) {
+	// 		KeyFrame k;
+	// 		for(int bone = 0; bone < mesh_->getNumberOfBones(); ++bone) {
+	// 			k.rel_rot.push_back(glm::quat_cast(mesh_->skeleton.joints[bone].t));
+	// 		}
+	// 		//k.light_pos = light_position_;
+	// 		//k.camera_pos = eye_;
+	// 		//k.camera_pos = rel_pos;
+	// 		// k.camera_rot = orientation_;
+	// 		// k.light_color = light_color_;
+	// 		// k.camera_dist = camera_distance_;
+	// 		mesh_->skeleton.keyframes[selected_frame] = k;
+	// 		replace_texture = selected_frame;
+	// 		save_texture_ = true;
+	// 	}
 
-	} else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
-		//reset skeleton
-		if(selected_frame >= getNumKeyframes()){
-			selected_frame = -1;
-		}
-		if(selected_frame != -1){
-			mesh_->changeSkeleton(mesh_->skeleton.keyframes[selected_frame]);
-			pose_changed_ = true;
-		}
-	} else if (key == GLFW_KEY_DELETE && action == GLFW_RELEASE) {
-		//delete keyframe
-		if(selected_frame != -1 && selected_frame < getNumKeyframes()) {
-			mesh_->skeleton.keyframes.erase(mesh_->skeleton.keyframes.begin() + selected_frame);
-			texture_locations.erase(texture_locations.begin() + selected_frame);
-			state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
-			if(state->next_keyframe > state->end_keyframe) {
-				state->current_keyframe = state->end_keyframe;
-				state->next_keyframe = state->end_keyframe;
-			}
+	// } else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
+	// 	//reset skeleton
+	// 	if(selected_frame >= getNumKeyframes()){
+	// 		selected_frame = -1;
+	// 	}
+	// 	if(selected_frame != -1){
+	// 		mesh_->changeSkeleton(mesh_->skeleton.keyframes[selected_frame]);
+	// 		pose_changed_ = true;
+	// 	}
+	// } else if (key == GLFW_KEY_DELETE && action == GLFW_RELEASE) {
+	// 	//delete keyframe
+	// 	if(selected_frame != -1 && selected_frame < getNumKeyframes()) {
+	// 		mesh_->skeleton.keyframes.erase(mesh_->skeleton.keyframes.begin() + selected_frame);
+	// 		texture_locations.erase(texture_locations.begin() + selected_frame);
+	// 		state->end_keyframe = mesh_->skeleton.keyframes.size()-1;
+	// 		if(state->next_keyframe > state->end_keyframe) {
+	// 			state->current_keyframe = state->end_keyframe;
+	// 			state->next_keyframe = state->end_keyframe;
+	// 		}
 
-		}
-		selected_frame = -1;
-	} else if (key == GLFW_KEY_I && action == GLFW_RELEASE) {
-		//toggle cursor
-		cursor = !cursor;
-	}else if (key == GLFW_KEY_EQUAL && action != GLFW_RELEASE) {
+	// 	}
+	// 	selected_frame = -1;
+	// } 
+	// else if (key == GLFW_KEY_I && action == GLFW_RELEASE) {
+	// 	//toggle cursor
+	// 	cursor = !cursor;
+	// }
+	else if (key == GLFW_KEY_EQUAL && action != GLFW_RELEASE) {
 		if(intensity_< 1.0){
 			intensity_+=.05;
 		}
@@ -539,7 +497,6 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		computeColor();
 	} 
 
-	// FIXME: implement other controls here.
 }
 
 glm::mat4 GUI::boneTransform(){
@@ -586,18 +543,8 @@ glm::mat3 GUI::cameraRotSpline(int cp0, int cp1, int cp2, int cp3, float t){
 	glm::mat3 m3 = cameraKeyframes[cp2].camera_rot;
 	glm::mat3 m4 = cameraKeyframes[cp3].camera_rot;
 
-	// glm::fquat prev = glm::quat_cast(cameraKeyframes[cp1].camera_rot);
-	// glm::fquat next = glm::quat_cast(cameraKeyframes[cp2].camera_rot);
-
-	// glm::fquat cur = glm::slerp(prev, next, t);
-
-	// glm::fquat a = glm::intermediate(prev,cur,next);
-	// glm::fquat b = glm::intermediate(a,cur,next);
-
-
 	glm::mat3 result = glm::mat3(1.0);
 
-	//cout << "m1 " << glm::to_string(m1) << endl;
 	result[1] = glm::normalize(glm::catmullRom(glm::column(m1, 1), glm::column(m2, 1), glm::column(m3, 1), glm::column(m4, 1), local_t));
 	glm::vec3 temp = glm::normalize(glm::catmullRom(glm::column(m1, 2), glm::column(m2, 2), glm::column(m3, 2), glm::column(m4, 2), local_t));
 
@@ -608,9 +555,6 @@ glm::mat3 GUI::cameraRotSpline(int cp0, int cp1, int cp2, int cp3, float t){
 	result[0] = glm::normalize(glm::cross(glm::column(result, 1), glm::column(result, 2)));
 
 	return result;
-	//return glm::squad(skeleton.keyframes[cp0].camera_rot, skeleton.keyframes[cp3].camera_rot, skeleton.keyframes[cp1].camera_rot, skeleton.keyframes[cp2].camera_rot,  local_t);
-	//return glm::toMat3(glm::squad(prev, next, a, b, t));
-	//return glm::toMat3(KeyFrame::boneSquad(prev, cur, next, local_t));
 }
 
 
@@ -675,7 +619,6 @@ void GUI::updateScene(float t){
 					}
 
 				} else if (sceneState->old_time - sceneState->current_time  > length) {
-					//&& sceneState->current_time <= lightKeyframes[sceneState->prev_light_keyframe].time
 					sceneState->old_time = sceneState->current_time;
 					if (sceneState->prev_light_keyframe > 0) {
 						//more frames
@@ -854,35 +797,25 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		look_ = glm::column(orientation_, 2);
 	} else if (drag_bone && current_bone_ != -1) {
 		// FIXME: Handle bone rotation
+		glm::vec4 parentpos =  glm::vec4(mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].position, 1);
+		parentpos = projection_matrix_ * view_matrix_ * parentpos;
+		parentpos = parentpos / glm::vec4(parentpos.w,parentpos.w,parentpos.w,parentpos.w);
+		glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*(view_height_ )/2);
+		
+		glm::vec2 a = mouse_start - ndc_coords;
+		glm::vec2 b = mouse_end - ndc_coords;
+		
+		glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
+		double det = a.x*b.y - a.y*b.x;
+		// float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
+		float angle = atan2(det, glm::dot(a,b));
 
-		// if(current_bone_ == 0) {
-		// 	//root joint translation
-		// 	glm::mat4 t = glm::mat4(1.0);
-		// 	t[3][0] = delta_x;
-		// 	t[3][1] = delta_y;
-		// 	mesh_->skeleton.translate(t);
-		// 	pose_changed_ = true;
-		// }
-		// else{
-			glm::vec4 parentpos =  glm::vec4(mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].position, 1);
-			parentpos = projection_matrix_ * view_matrix_ * parentpos;
-			parentpos = parentpos / glm::vec4(parentpos.w,parentpos.w,parentpos.w,parentpos.w);
-			glm::vec2 ndc_coords = glm::vec2((parentpos.x+1)*view_width_/2, (parentpos.y+1)*(view_height_ )/2);
-			
-			glm::vec2 a = mouse_start - ndc_coords;
-			glm::vec2 b = mouse_end - ndc_coords;
-			
-			glm::mat4 parentcoords = mesh_->skeleton.joints[mesh_->skeleton.joints[current_bone_].parent_index].d;
-			double det = a.x*b.y - a.y*b.x;
-			// float angle = atan2(det, glm::dot(a,b)) * 180 / 3.14;
-			float angle = atan2(det, glm::dot(a,b));
-	
-			//change look to local coordinates
+		//change look to local coordinates
 
-			glm::mat4 r = glm::rotate(-angle, glm::vec3(glm::inverse(parentcoords)*glm::vec4(look_,0)));
-			mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index,current_bone_, r);
-			pose_changed_ = true;
-		// }
+		glm::mat4 r = glm::rotate(-angle, glm::vec3(glm::inverse(parentcoords)*glm::vec4(look_,0)));
+		mesh_->skeleton.rotate(mesh_->skeleton.joints[current_bone_].parent_index,current_bone_, r);
+		pose_changed_ = true;
+		
 		return;
 	} else if(drag_light){
 			glm::vec4 lightpos =  light_position_;
@@ -901,7 +834,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 				lightend = lightend / glm::vec4(lightend.w,lightend.w,lightend.w,lightend.w);
 				ndc_coords2 = glm::vec2((lightend.x+1)*view_width_/2, (lightend.y+1)*view_height_/2);
 				axis_dir = ndc_coords2 - ndc_coords;
-				//cout<<"dot product "<<glm::dot(axis_dir,drag)*0.01<<endl;
 				light_position_.x+=glm::dot(axis_dir,drag)*drag_speed;
 				break;
 			case y_axis:
@@ -926,30 +858,19 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	}
 
 	// FIXME: highlight bones that have been moused over
-	//go from screen coords to ndc (divide by width, multiply by 2 and subtract 1)
-	//z is at 1
-	// multiply by mvp inverse (wmouse)
-	//position is eye
-	// direction is wmouse - eye
-	//loop through joints and transform ray to be in local coord
-	// call cylinderintersect
-	//set current bone index and stop
 	double ndc_x = mouse_x * 2/ view_width_ -1;
 	double ndc_y = (window_height_ - mouse_y) * 2 / view_height_ -1;
 	glm::vec4 ndc_coords = glm::vec4(ndc_x,ndc_y, 1, 1);
-	//cout<<"ndc coords "<< glm::to_string(ndc_coords)<<endl;
-	//glm::mat4 vp =  view_matrix_ * projection_matrix_;
+
 	glm::vec4 world_coords = glm::inverse(view_matrix_)*glm::inverse(projection_matrix_) * ndc_coords;
 	world_coords = world_coords/world_coords[3];
-	//cout<<"world coords "<< glm::to_string(world_coords)<<endl;
+
 	glm::vec4 dir = world_coords - glm::vec4(eye_,1);
-	//cout<<"ray direction "<< glm::to_string(dir)<<endl;
 
 	if(!drag_state_){
 		glm::mat4 light_coords = glm::mat4(1.0);
 		light_coords[3]= light_position_;
 		light_coords = glm::inverse(light_coords);
-		// cout<<"light pos "<<glm::to_string(light_position_)<<endl;
 		double foo = 400;
 		chosen_axis = none;
 
@@ -992,13 +913,7 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 	for(int bone = 1; bone < mesh_->getNumberOfBones(); ++bone){
 		Joint j = mesh_->skeleton.joints[bone];
 		glm::vec3 parentpos =  mesh_->skeleton.joints[j.parent_index].position;
-		//glm::vec3  = j.init_rel_position
 
-		//mat4 t: tangent is j. init_position - parent init init_position
-		// normal: find smallest value of tangent, set to 1 then cross
-		//binormal: cross tangent and normal
-		//relative pos is init position in parents coord system multiply by inverse of parent's D
-		//origin is the init_position
 		glm::vec3 tangent = glm::normalize(parentpos - j.position );
 		glm::vec3 n;
 		glm::vec3 abstan = glm::abs(tangent);
@@ -1009,7 +924,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		} else {
 				n = glm::vec3(0,0,1);
 		}
-
 
 		glm::vec3 normal = glm::normalize(glm::cross(tangent, n));
 		glm::vec3 bitan = glm::normalize(glm::cross(tangent,normal));
@@ -1036,20 +950,19 @@ void GUI::mouseButtonCallback(int button, int action, int mods)
 		move_scrub = false;
 	}
 	if (current_x_ <= view_width_) {
-		//cout << "current x" << endl;
 		drag_state_ = (action == GLFW_PRESS);
 		current_button_ = button;
 		return ;
 	}
 	// FIXME: Key Frame Selection
-	if(current_x_ <= window_width_ && current_y_ <= window_height_){
-		if(action == GLFW_PRESS){
-			int temp = floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset);
-			if (temp < getNumKeyframes()) {
-				selected_frame = temp;
-			}
-		}
-	}
+	// if(current_x_ <= window_width_ && current_y_ <= window_height_){
+	// 	if(action == GLFW_PRESS){
+	// 		int temp = floor((window_height_-current_y_)/preview_height_-0.5*scroll_offset);
+	// 		if (temp < getNumKeyframes()) {
+	// 			selected_frame = temp;
+	// 		}
+	// 	}
+	// }
 	
 
 	
@@ -1103,12 +1016,6 @@ bool GUI::setCurrentBone(int i)
 
 float GUI::getCurrentPlayTime() const
 {
-	// FIXME: return actual time???
-	// save start time when p is pressed
-	// reset start time when r is pressed
-	// save amount of time run when p (pause) pressed and add when 
-	// it resumes
-
 	chrono::time_point<chrono::steady_clock> current = chrono::steady_clock::now();
 	chrono::duration<float> elapsed_time = current - play_start;
 	return elapsed_time.count() + pause_time;
@@ -1120,12 +1027,10 @@ bool GUI::captureWASDUPDOWN(int key, int action)
 	if (key == GLFW_KEY_W) {
 		if (fps_mode_){
 			eye_ += zoom_speed_ * look_;
-			//rel_pos += zoom_speed_ * look_;
 		}
 		else{
 			camera_distance_ -= zoom_speed_;
 		}
-		//rel_pos += zoom_speed_ * look_;
 		return true;
 	} else if (key == GLFW_KEY_S) {
 		if (fps_mode_){
@@ -1134,35 +1039,30 @@ bool GUI::captureWASDUPDOWN(int key, int action)
 		else{
 			camera_distance_ += zoom_speed_;
 		}
-		//rel_pos -= zoom_speed_ * look_;
 		return true;
 	} else if (key == GLFW_KEY_A) {
 		if (fps_mode_)
 			eye_ -= pan_speed_ * tangent_;
 		else
 			center_ -= pan_speed_ * tangent_;
-		//rel_pos -= pan_speed_ * tangent_;
 		return true;
 	} else if (key == GLFW_KEY_D) {
 		if (fps_mode_)
 			eye_ += pan_speed_ * tangent_;
 		else
 			center_ += pan_speed_ * tangent_;
-		//rel_pos += pan_speed_ * tangent_;
 		return true;
 	} else if (key == GLFW_KEY_DOWN) {
 		if (fps_mode_)
 			eye_ -= pan_speed_ * up_;
 		else
 			center_ -= pan_speed_ * up_;
-		//rel_pos -= pan_speed_ * up_;
 		return true;
 	} else if (key == GLFW_KEY_UP) {
 		if (fps_mode_)
 			eye_ += pan_speed_ * up_;
 		else
 			center_ += pan_speed_ * up_;
-		//rel_pos += pan_speed_ * up_;
 		return true;
 	}
 	return false;

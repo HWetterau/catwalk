@@ -72,12 +72,9 @@ struct KeyFrame {
 
 	
 	static bool quatEquals(glm::fquat a, glm::fquat b){
-		//return (a[0]==b[0] && a[1]==b[1] && a[2] == b[2] && a[3]==b[3]);
 		return abs(glm::dot(a,b)) > 1- 0.0001;
 	}
 	static glm::fquat boneSquad(glm::fquat prev, glm::fquat cur, glm::fquat next, float tau){
-		//glm::fquat a = myBisect(doub(prev,cur),next);
-		//glm::fquat b = doub(a,cur);
 		if( quatEquals(prev,next) || quatEquals(prev,cur)){
 			return prev;
 		}
@@ -92,27 +89,12 @@ struct KeyFrame {
 	                        float tau,
 	                        KeyFrame& target) {
 		for(int i = 0; i < (int)from.rel_rot.size(); ++i){
-			//CHANGE ME
-			//target.rel_rot.push_back(glm::slerp(from.rel_rot[i], to.rel_rot[i], tau));
 			glm::fquat cur = glm::slerp(from.rel_rot[i], to.rel_rot[i], tau);
 			target.rel_rot.push_back(boneSquad(from.rel_rot[i],cur,to.rel_rot[i], tau));
 		}
-	
-		//target.camera_rot = glm::slerp(from.camera_rot, to.camera_rot, tau);
-		
 
 	}
 };
-
-// struct LightCam {
-// 	glm::vec4 light_pos;
-// 	glm::vec3 camera_pos;
-// 	//if rotations dont work out use center and glm look at
-// 	glm::mat3 camera_rot;
-// 	glm::vec4 light_color;
-// 		float camera_dist;
-
-// };
 
 
 struct AnimationState {
@@ -126,8 +108,6 @@ struct AnimationState {
 	float old_time;
 
 	AnimationState(): current_keyframe(0), next_keyframe(1), prev_keyframe(0) {}
-
-	//could store interpolation factor but also could calculate
 	
 };
 
@@ -179,9 +159,8 @@ struct Skeleton {
 		} else {
 			j.d = j.b * j.t;
 		}
-	//	for(int child: j.children){
-			update_d(child);
-		//}
+
+		update_d(child);
 
 	}
 	void translate(glm::mat4 T){
@@ -192,7 +171,6 @@ struct Skeleton {
 	
 	void update_d(int index){
 		if(index < 0){
-			//cout<<"index < 0"<<endl;
 			return;
 		}
 		Joint& j = joints[index];
@@ -201,7 +179,6 @@ struct Skeleton {
 		} else {
 			j.d = j.b * j.t;
 		}
-	//	j.position = glm::vec3(joints[j.parent_index].d * glm::vec4(j.init_rel_position,1));
 		j.position = glm::vec3(j.d * glm::vec4(0,0,0,1));
 		for(int child: j.children){
 			update_d(child);
@@ -244,8 +221,6 @@ struct Mesh {
 	void updateAnimation(float t,  AnimationState* a);
 	void updateAnimation();
 
-	void saveAnimationTo(const std::string& fn);
-	void loadAnimationFrom(const std::string& fn);
 	glm::vec3 lightSpline(float t);
 	glm::vec3 cameraPosSpline(float t);
 	glm::mat3 cameraRotSpline(float t);
@@ -255,8 +230,6 @@ struct Mesh {
 		u.push_back(skeleton.joints[0].d * glm::inverse(skeleton.joints[0].b));
 
 		for (int bone = 1; bone < getNumberOfBones(); ++bone) {
-			//u.push_back(glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
-			// u.push_back(skeleton.joints[bone].d*glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
 			u.push_back(skeleton.joints[bone].d*glm::inverse(glm::mat4(glm::vec4(1,0,0,0),glm::vec4(0,1,0,0),
 										glm::vec4(0,0,1,0),glm::vec4(skeleton.joints[bone].init_position,1))));
 		}
@@ -264,44 +237,36 @@ struct Mesh {
 		return u;
 	}
 
-	vector<glm::mat2x4> load_dq() {
-		vector<glm::mat2x4> dq;
-		// const glm::vec3* collectJointTrans() const;
-		// const glm::fquat* collectJointRot() const;
-
-		for (int bone = 0; bone < getNumberOfBones(); ++bone) {
-			//u.push_back(glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
-			// u.push_back(skeleton.joints[bone].d*glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
-			glm::vec3 trans = skeleton.joints[bone].position;
-			glm::fquat rot = glm::quat_cast(glm::mat3(skeleton.joints[bone].d));
-
-			glm::mat2x4 dq_mat;
-			for (int i = 0; i < 4; i++) {
-				dq_mat[0][i] = rot[i];
-			}
-			
-			dq_mat[1][0] = -0.5*(trans[0]*rot[1] + trans[1]*rot[2] + trans[2]*rot[3]);
-			dq_mat[1][1] = 0.5*( trans[0]*rot[0] + trans[1]*rot[3] - trans[2]*rot[2]);
-			dq_mat[1][2] = 0.5*(-trans[0]*rot[3] + trans[1]*rot[0] + trans[2]*rot[1]);
-			dq_mat[1][3] = 0.5*( trans[0]*rot[2] - trans[1]*rot[1] + trans[2]*rot[0]);
-
-
-			dq.push_back(dq_mat);
-		}
-
-		return dq;
-}
-	//ADDED THIS, in .cc file
-	void changeSkeleton(KeyFrame& k);
-
-	// vector<glm::mat4> load_d() {
-	// 	vector<glm::mat4> d;
+	//sad attempt at dual quaternions
+	// vector<glm::mat2x4> load_dq() {
+	// 	vector<glm::mat2x4> dq;
+	// 	// const glm::vec3* collectJointTrans() const;
+	// 	// const glm::fquat* collectJointRot() const;
 
 	// 	for (int bone = 0; bone < getNumberOfBones(); ++bone) {
-	// 		d.push_back(skeleton.joints[bone].d);
+	// 		//u.push_back(glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
+	// 		// u.push_back(skeleton.joints[bone].d*glm::inverse(skeleton.joints[bone-1].d * skeleton.joints[bone].b));
+	// 		glm::vec3 trans = skeleton.joints[bone].position;
+	// 		glm::fquat rot = glm::quat_cast(glm::mat3(skeleton.joints[bone].d));
+
+	// 		glm::mat2x4 dq_mat;
+	// 		for (int i = 0; i < 4; i++) {
+	// 			dq_mat[0][i] = rot[i];
+	// 		}
+			
+	// 		dq_mat[1][0] = -0.5*(trans[0]*rot[1] + trans[1]*rot[2] + trans[2]*rot[3]);
+	// 		dq_mat[1][1] = 0.5*( trans[0]*rot[0] + trans[1]*rot[3] - trans[2]*rot[2]);
+	// 		dq_mat[1][2] = 0.5*(-trans[0]*rot[3] + trans[1]*rot[0] + trans[2]*rot[1]);
+	// 		dq_mat[1][3] = 0.5*( trans[0]*rot[2] - trans[1]*rot[1] + trans[2]*rot[0]);
+
+
+	// 		dq.push_back(dq_mat);
 	// 	}
-	// 	return d;
+
+	// 	return dq;
 	// }
+	//ADDED THIS, in .cc file
+	void changeSkeleton(KeyFrame& k);
 
 private:
 	void computeBounds();

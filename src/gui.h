@@ -88,7 +88,6 @@ public:
 
 	glm::mat4 getProjection() const { return projection_matrix_; }
 	const float* getView() const { return &view_matrix_[0][0]; }
-	void printDistance () const {	cout<<"print Distance: eye "<<glm::to_string(eye_)<<" camera distance "<<camera_distance_<<endl;}
 
 	glm::mat4 lightTransform();
 
@@ -130,6 +129,9 @@ public:
 			result.push_back(c.time);
 		}
 	}
+
+	void saveAnimationTo(const std::string& fn);
+	void loadAnimationFrom(const std::string& fn);
 
 	enum {x_axis,z_axis,y_axis, none};
 	enum {WHITE,RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE,NUMCOLORS};
@@ -213,7 +215,6 @@ private:
 	bool play_ = false;
 	bool scrubbing_ = false;
 
-	//store keyframes in gui?
 	SceneState* sceneState;
 	AnimationState* state;
 	chrono::time_point<chrono::steady_clock> play_start;
