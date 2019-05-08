@@ -1,5 +1,9 @@
 Ann Yue
 Hannah Wetterau
+We both turned in the eCIS.
+
+To run the creative short from the build folder, run this command
+./bin/skinning ../assets/pmd/Miku_Hatsune.pmd ../cancan+ymca.json
 
 Instructions:
 t: turn the model transparent, show bones
