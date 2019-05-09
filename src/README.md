@@ -1,6 +1,11 @@
-Ann Yue
-Hannah Wetterau
+Ann Yue (ay5629)
+Hannah Wetterau (hrw527)
 We both turned in the eCIS.
+
+Navigate to the build/ folder
+Then run cmake ..
+Then run make -j8
+Then run ./bin/skinning ../assets/pmd/<model of your choice>
 
 To run the creative short from the build folder, run this command
 ./bin/skinning ../assets/pmd/Miku_Hatsune.pmd ../cancan+ymca.json
